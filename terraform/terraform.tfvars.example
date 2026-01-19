@@ -1,0 +1,19 @@
+airbyte_workspace_id = "<your-airbyte-workspace-id>"
+
+airbyte_client_id = "<your-airbyte-client-id>"
+airbyte_client_secret = "<your-airbyte-client-secret>"
+
+airbyte_hackernews_rss_sources = {
+  "hackernews-rss-frontpage"   = "https://hnrss.org/frontpage"
+  "hackernews-rss-jobs"        = "https://hnrss.org/jobs"
+  "hackernews-rss-newcomments" = "https://hnrss.org/newcomments"
+  "hackernews-rss-newest"      = "https://hnrss.org/newest"
+}
+
+airbyte_hackernews_bq_destination = "bigquery-hackernews"
+
+bq_hackernews_raw_dataset = "hackernews_rss"
+
+gcp_project_id = "<your-gcp-project-id>"
+
+gcp_credentials_path = "<path-to-your-gcp-service-account-json>"
