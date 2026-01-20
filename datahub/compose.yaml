@@ -1,0 +1,430 @@
+x-datahub-gms-image: &datahub-gms-image acryldata/datahub-gms:${DATAHUB_VERSION:-v1.3.0.1}
+x-datahub-frontend-image: &datahub-frontend-image acryldata/datahub-frontend-react:${DATAHUB_VERSION:-v1.3.0.1}
+x-datahub-mae-consumer-image: &datahub-mae-consumer-image acryldata/datahub-mae-consumer:${DATAHUB_VERSION:-v1.3.0.1}
+x-datahub-mce-consumer-image: &datahub-mce-consumer-image acryldata/datahub-mce-consumer:${DATAHUB_VERSION:-v1.3.0.1}
+x-datahub-upgrade-image: &datahub-upgrade-image acryldata/datahub-upgrade:${DATAHUB_VERSION:-v1.3.0.1}
+
+x-datahub-postgres-init-image: &datahub-postgres-init-image acryldata/datahub-postgres-setup:${DATAHUB_VERSION:-v1.3.0.1}
+x-datahub-opensearch-init-image: &datahub-opensearch-init-image acryldata/datahub-elasticsearch-setup:${DATAHUB_VERSION:-v1.3.0.1}
+x-datahub-kafka-init-image: &datahub-kafka-init-image acryldata/datahub-kafka-setup:${DATAHUB_VERSION:-v1.2.0.1}
+
+x-postgres-image: &postgres-image postgres:${POSTGRES_VERSION:-18-alpine}
+x-opensearch-image: &opensearch-image opensearchproject/opensearch:${DATAHUB_SEARCH_TAG:-2.19.2}
+x-cp-kafka-image: &cp-kafka-image confluentinc/cp-kafka:${CONFLUENT_PLATFORM_VERSION:-8.1.1}
+x-cp-schema-registry-image: &cp-schema-registry-image confluentinc/cp-schema-registry:${CONFLUENT_PLATFORM_VERSION:-8.1.1}
+
+x-conduktor-console: &conduktor-console-image conduktor/conduktor-console:${CONDUKTOR_PLATFORM_VERSION:-1.42.0}
+x-conduktor-cortex: &conduktor-cortex-image conduktor/conduktor-console-cortex:${CONDUKTOR_PLATFORM_VERSION:-1.42.0}
+
+x-kafka-common:
+  &kafka-common
+  image: *cp-kafka-image
+  environment: &kafka-common-env
+    CLUSTER_ID: 'K9qYnkFwaAFO1DrFubmKug=='
+    KAFKA_PROCESS_ROLES: 'broker,controller'
+    KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+    KAFKA_INTER_BROKER_LISTENER_NAME: 'INTERNAL'
+    KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,DOCKER:PLAINTEXT'
+    KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    KAFKA_AUTO_CREATE_TOPICS_ENABLE: true
+    KAFKA_DELETE_TOPIC_ENABLE: true
+    KAFKA_JMX_PORT: 9999
+  healthcheck:
+    test: ["CMD-SHELL", "kafka-broker-api-versions --bootstrap-server localhost:29092 || exit 1"]
+    start_period: 10s
+    interval: 5s
+    timeout: 10s
+    retries: 5
+  restart: on-failure:5
+
+x-depends-on-kafka-cluster:
+  depends_on: &depends-on-kafka-cluster
+    datahub-kafka-broker0:
+      condition: service_healthy
+    datahub-schema-registry:
+      condition: service_healthy
+
+services:
+  # Infrastructure
+  datahub-postgres:
+    image: *postgres-image
+    container_name: datahub-postgres
+    hostname: datahub-postgres
+    environment:
+      POSTGRES_DB: 'datahub'
+      POSTGRES_USER: 'datahub'
+      POSTGRES_PASSWORD: 'datahub'
+    ports:
+      - ${DATAHUB_MAPPED_POSTGRES_PORT:-5439}:5432
+    volumes:
+      - vol-datahub-pgdata:/var/lib/postgresql
+    healthcheck:
+      interval: 5s
+      retries: 5
+      start_period: 20s
+      test: ["CMD-SHELL", "pg_isready -U datahub"]
+      timeout: 10s
+    restart: on-failure
+
+  datahub-opensearch:
+    image: *opensearch-image
+    container_name: datahub-opensearch
+    hostname: datahub-opensearch
+    environment:
+      discovery.type: 'single-node'
+      OPENSEARCH_JAVA_OPTS: '-Xms768m -Xmx1024m -Dlog4j2.formatMsgNoLookups=true'
+      DISABLE_SECURITY_PLUGIN: true
+      OPENSEARCH_INITIAL_ADMIN_PASSWORD: 'admin'
+    ports:
+      - ${DATAHUB_MAPPED_ELASTIC_PORT:-9200}:9200
+    volumes:
+      - vol-datahub-osdata:/usr/share/opensearch/data
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+    healthcheck:
+      interval: 5s
+      retries: 5
+      start_period: 30s
+      test: curl -sS --fail http://datahub-opensearch:$${DATAHUB_ELASTIC_PORT:-9200}/_cluster/health?wait_for_status=yellow&timeout=0s
+      timeout: 10s
+    restart: on-failure:5
+
+  datahub-kafka-broker0:
+    <<: *kafka-common
+    container_name: datahub-kafka-broker0
+    hostname: datahub-kafka-broker0
+    environment:
+      <<: *kafka-common-env
+      KAFKA_NODE_ID: 0
+      KAFKA_LISTENERS: INTERNAL://0.0.0.0:29092,CONTROLLER://0.0.0.0:29093,EXTERNAL://0.0.0.0:9092,DOCKER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://datahub-kafka-broker0:29092,EXTERNAL://localhost:9092,DOCKER://host.docker.internal:9093
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '0@datahub-kafka-broker0:29093'
+    ports:
+      - '9092:9092'
+      - '9093:9093'
+    volumes:
+      - vol-datahub-kafka-broker0:/var/lib/kafka/data
+
+  datahub-schema-registry:
+    image: *cp-schema-registry-image
+    container_name: datahub-schema-registry
+    hostname: datahub-schema-registry
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: 'datahub-schema-registry'
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: 'PLAINTEXT://datahub-kafka-broker0:29092'
+      SCHEMA_REGISTRY_LISTENERS: 'http://0.0.0.0:8081'
+      SCHEMA_REGISTRY_DEBUG: true
+    ports:
+      - '8081:8081'
+    depends_on:
+      datahub-kafka-broker0:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8081/subjects || exit 1"]
+      start_period: 10s
+      interval: 5s
+      timeout: 10s
+      retries: 5
+    restart: on-failure:5
+
+  # Core Services
+  datahub-gms:
+    image: *datahub-gms-image
+    container_name: datahub-gms
+    hostname: datahub-gms
+    environment:
+      # Metadata DB (PostgreSQL)
+      EBEAN_DATASOURCE_DRIVER: 'org.postgresql.Driver'
+      EBEAN_DATASOURCE_HOST: 'datahub-postgres:5432'
+      EBEAN_DATASOURCE_USERNAME: 'datahub'
+      EBEAN_DATASOURCE_PASSWORD: 'datahub'
+      EBEAN_DATASOURCE_URL: 'jdbc:postgresql://datahub-postgres:5432/datahub'
+      # Search & Graph DB (OpenSearch)
+      ELASTICSEARCH_HOST: 'datahub-opensearch'
+      ELASTICSEARCH_PORT: 9200
+      ELASTICSEARCH_INDEX_BUILDER_MAPPINGS_REINDEX: true
+      ELASTICSEARCH_INDEX_BUILDER_SETTINGS_REINDEX: true
+      ES_BULK_REFRESH_POLICY: 'WAIT_UNTIL'
+      GRAPH_SERVICE_IMPL: 'elasticsearch'
+      GRAPH_SERVICE_DIFF_MODE_ENABLED: true
+      # Kafka
+      KAFKA_BOOTSTRAP_SERVER: 'datahub-kafka-broker0:29092'
+      KAFKA_SCHEMAREGISTRY_URL: 'http://datahub-schema-registry:8081'
+      KAFKA_CONSUMER_STOP_ON_DESERIALIZATION_ERROR: ${KAFKA_CONSUMER_STOP_ON_DESERIALIZATION_ERROR:-true}
+      DATAHUB_UPGRADE_HISTORY_KAFKA_CONSUMER_GROUP_ID: 'generic-duhe-consumer-job-client-gms'
+      # Entity & Consumer config
+      ENTITY_REGISTRY_CONFIG_PATH: '/datahub/datahub-gms/resources/entity-registry.yml'
+      ENTITY_SERVICE_ENABLE_RETENTION: true
+      MAE_CONSUMER_ENABLED: false
+      MCE_CONSUMER_ENABLED: false
+      PE_CONSUMER_ENABLED: false
+      UI_INGESTION_ENABLED: true
+      # Auth
+      METADATA_SERVICE_AUTH_ENABLED: ${METADATA_SERVICE_AUTH_ENABLED:-false}
+      DATAHUB_TOKEN_SERVICE_SIGNING_KEY: ${DATAHUB_TOKEN_SERVICE_SIGNING_KEY:-WnEdIeTG/VVCLQqGwC/BAkqyY0k+H8NEAtWGejrBI94=}
+      DATAHUB_TOKEN_SERVICE_SALT: ${DATAHUB_TOKEN_SERVICE_SALT:-ohDVbJBvHHVJh9S/UA7vkJ5SOkC3U0ER3bAQqOIaPus=}
+      # App config
+      DATAHUB_TELEMETRY_ENABLED: ${DATAHUB_TELEMETRY_ENABLED:-true}
+      DATAHUB_SERVER_TYPE: ${DATAHUB_SERVER_TYPE:-quickstart}
+      JAVA_OPTS: '-Xms1g -Xmx1g'
+    ports:
+      - '9090:8080'
+    volumes:
+      - ${HOME}/.datahub/plugins:/etc/datahub/plugins
+    depends_on:
+      datahub-upgrade:
+        condition: service_completed_successfully
+    healthcheck:
+      interval: 5s
+      retries: 5
+      start_period: 90s
+      test: curl -sS --fail http://datahub-gms:${DATAHUB_GMS_PORT:-8080}/health
+      timeout: 10s
+
+  datahub-frontend:
+    image: *datahub-frontend-image
+    container_name: datahub-frontend
+    hostname: datahub-frontend
+    environment:
+      # GMS connection
+      DATAHUB_GMS_HOST: 'datahub-gms'
+      DATAHUB_GMS_PORT: 8080
+      # Search DB (OpenSearch)
+      ELASTIC_CLIENT_HOST: 'datahub-opensearch'
+      ELASTIC_CLIENT_PORT: 9200
+      # Kafka
+      KAFKA_BOOTSTRAP_SERVER: 'datahub-kafka-broker0:29092'
+      DATAHUB_TRACKING_TOPIC: 'DataHubUsageEvent_v1'
+      # App config & JVM
+      DATAHUB_SECRET: '8Nt&@y7gaPsdYBd#'
+      DATAHUB_APP_VERSION: ${DATAHUB_VERSION:-v1.3.0.1}
+      DATAHUB_PLAY_MEM_BUFFER_SIZE: '10MB'
+      JAVA_OPTS: '-Xms512m -Xmx512m -Dhttp.port=9002 -Dconfig.file=datahub-frontend/conf/application.conf -Djava.security.auth.login.config=datahub-frontend/conf/jaas.conf -Dlogback.configurationFile=datahub-frontend/conf/logback.xml -Dlogback.debug=false -Dpidfile.path=/dev/null'
+    ports:
+      - ${DATAHUB_MAPPED_FRONTEND_PORT:-9002}:9002
+    volumes:
+      - ${HOME}/.datahub/plugins:/etc/datahub/plugins
+    depends_on:
+      datahub-gms:
+        condition: service_healthy
+
+  datahub-mce-consumer:
+    image: *datahub-mce-consumer-image
+    container_name: datahub-mce-consumer
+    hostname: datahub-mce-consumer
+    environment:
+      # Metadata DB (PostgreSQL)
+      EBEAN_DATASOURCE_DRIVER: 'org.postgresql.Driver'
+      EBEAN_DATASOURCE_HOST: 'datahub-postgres:5432'
+      EBEAN_DATASOURCE_USERNAME: 'datahub'
+      EBEAN_DATASOURCE_PASSWORD: 'datahub'
+      EBEAN_DATASOURCE_URL: 'jdbc:postgresql://datahub-postgres:5432/datahub'
+      # Search & Graph DB (OpenSearch)
+      ELASTICSEARCH_HOST: 'datahub-opensearch'
+      ELASTICSEARCH_PORT: 9200
+      ES_BULK_REFRESH_POLICY: 'WAIT_UNTIL'
+      GRAPH_SERVICE_IMPL: 'elasticsearch'
+      GRAPH_SERVICE_DIFF_MODE_ENABLED: true
+      # Kafka
+      KAFKA_BOOTSTRAP_SERVER: 'datahub-kafka-broker0:29092'
+      KAFKA_SCHEMAREGISTRY_URL: 'http://datahub-schema-registry:8081'
+      KAFKA_CONSUMER_STOP_ON_DESERIALIZATION_ERROR: ${KAFKA_CONSUMER_STOP_ON_DESERIALIZATION_ERROR:-true}
+      KAFKA_CONSUMER_HEALTH_CHECK_ENABLED: ${KAFKA_CONSUMER_HEALTH_CHECK_ENABLED:-true}
+      DATAHUB_UPGRADE_HISTORY_KAFKA_CONSUMER_GROUP_ID: 'generic-duhe-consumer-job-client-mcp'
+      # Entity & Consumer config
+      ENTITY_REGISTRY_CONFIG_PATH: '/datahub/datahub-mce-consumer/resources/entity-registry.yml'
+      ENTITY_SERVICE_ENABLE_RETENTION: true
+      MCE_CONSUMER_ENABLED: true
+      MAE_CONSUMER_ENABLED: false
+      PE_CONSUMER_ENABLED: false
+      UI_INGESTION_ENABLED: false
+      # App config
+      DATAHUB_SYSTEM_CLIENT_ID: '__datahub_system'
+      DATAHUB_SYSTEM_CLIENT_SECRET: 'JohnSnowKnowsNothing'
+      DATAHUB_TELEMETRY_ENABLED: ${DATAHUB_TELEMETRY_ENABLED:-true}
+      DATAHUB_SERVER_TYPE: ${DATAHUB_SERVER_TYPE:-quickstart}
+      JAVA_OPTS: '-Xms1g -Xmx1g'
+    depends_on:
+      datahub-gms:
+        condition: service_healthy
+
+  datahub-mae-consumer:
+    image: *datahub-mae-consumer-image
+    container_name: datahub-mae-consumer
+    hostname: datahub-mae-consumer
+    environment:
+      # GMS connection
+      DATAHUB_GMS_HOST: 'datahub-gms'
+      DATAHUB_GMS_PORT: 8080
+      # Search & Graph DB (OpenSearch)
+      ELASTICSEARCH_HOST: 'datahub-opensearch'
+      ELASTICSEARCH_PORT: 9200
+      ES_BULK_REFRESH_POLICY: 'WAIT_UNTIL'
+      GRAPH_SERVICE_IMPL: 'elasticsearch'
+      # Kafka
+      KAFKA_BOOTSTRAP_SERVER: 'datahub-kafka-broker0:29092'
+      KAFKA_SCHEMAREGISTRY_URL: 'http://datahub-schema-registry:8081'
+      KAFKA_CONSUMER_STOP_ON_DESERIALIZATION_ERROR: ${KAFKA_CONSUMER_STOP_ON_DESERIALIZATION_ERROR:-true}
+      KAFKA_CONSUMER_HEALTH_CHECK_ENABLED: ${KAFKA_CONSUMER_HEALTH_CHECK_ENABLED:-true}
+      DATAHUB_UPGRADE_HISTORY_KAFKA_CONSUMER_GROUP_ID: 'generic-duhe-consumer-job-client-mcl'
+      # Consumer config & Entity
+      ENTITY_REGISTRY_CONFIG_PATH: '/datahub/datahub-mae-consumer/resources/entity-registry.yml'
+      MAE_CONSUMER_ENABLED: true
+      PE_CONSUMER_ENABLED: true
+    depends_on:
+      datahub-gms:
+        condition: service_healthy
+
+  # Init Containers
+  datahub-postgres-init:
+    image: *datahub-postgres-init-image
+    container_name: datahub-postgres-init
+    hostname: datahub-postgres-init
+    environment:
+      POSTGRES_HOST: 'datahub-postgres'
+      POSTGRES_PORT: 5432
+      POSTGRES_USERNAME: 'datahub'
+      POSTGRES_PASSWORD: 'datahub'
+      DATAHUB_DB_NAME: 'datahub'
+    depends_on:
+      datahub-postgres:
+        condition: service_healthy
+
+  datahub-opensearch-init:
+    image: *datahub-opensearch-init-image
+    container_name: datahub-opensearch-init
+    hostname: datahub-opensearch-init
+    environment:
+      ELASTICSEARCH_HOST: 'datahub-opensearch'
+      ELASTICSEARCH_PORT: 9200
+      ELASTICSEARCH_PROTOCOL: 'http'
+      ELASTICSEARCH_USE_SSL: ${ELASTICSEARCH_USE_SSL:-false}
+      USE_AWS_ELASTICSEARCH: true
+    depends_on:
+      datahub-opensearch:
+        condition: service_healthy
+
+  datahub-kafka-init:
+    image: *datahub-kafka-init-image
+    container_name: datahub-kafka-init
+    hostname: datahub-kafka-init
+    environment:
+      KAFKA_BOOTSTRAP_SERVER: 'datahub-kafka-broker0:29092'
+      DATAHUB_PRECREATE_TOPICS: ${DATAHUB_PRECREATE_TOPICS:-true}
+    depends_on:
+      datahub-kafka-broker0:
+        condition: service_healthy
+      datahub-schema-registry:
+        condition: service_healthy
+
+  datahub-upgrade:
+    image: *datahub-upgrade-image
+    container_name: datahub-upgrade
+    hostname: datahub-upgrade
+    command:
+      - -u
+      - SystemUpdate
+    environment:
+      # GMS connection
+      DATAHUB_GMS_HOST: 'datahub-gms'
+      DATAHUB_GMS_PORT: 8080
+      # Metadata DB (PostgreSQL)
+      EBEAN_DATASOURCE_DRIVER: 'org.postgresql.Driver'
+      EBEAN_DATASOURCE_HOST: 'datahub-postgres:5432'
+      EBEAN_DATASOURCE_USERNAME: 'datahub'
+      EBEAN_DATASOURCE_PASSWORD: 'datahub'
+      EBEAN_DATASOURCE_URL: 'jdbc:postgresql://datahub-postgres:5432/datahub'
+      # Search & Graph DB (OpenSearch)
+      ELASTICSEARCH_HOST: 'datahub-opensearch'
+      ELASTICSEARCH_PORT: 9200
+      ELASTICSEARCH_INDEX_BUILDER_MAPPINGS_REINDEX: true
+      ELASTICSEARCH_INDEX_BUILDER_SETTINGS_REINDEX: true
+      ELASTICSEARCH_BUILD_INDICES_CLONE_INDICES: false
+      GRAPH_SERVICE_IMPL: 'elasticsearch'
+      # Kafka
+      KAFKA_BOOTSTRAP_SERVER: 'datahub-kafka-broker0:29092'
+      KAFKA_SCHEMAREGISTRY_URL: 'http://datahub-schema-registry:8081'
+      # Entity config
+      ENTITY_REGISTRY_CONFIG_PATH: '/datahub/datahub-gms/resources/entity-registry.yml'
+      # Migration flags
+      BACKFILL_BROWSE_PATHS_V2: true
+      REPROCESS_DEFAULT_BROWSE_PATHS_V2: false
+    depends_on:
+      datahub-opensearch-init:
+        condition: service_completed_successfully
+      datahub-kafka-init:
+        condition: service_completed_successfully
+      datahub-postgres-init:
+        condition: service_completed_successfully
+
+  # Conduktor Platform Docs:
+  # https://docs.conduktor.io/platform/configuration/env-variables
+  conduktor-console:
+    image: *conduktor-console-image
+    container_name: conduktor-console
+    hostname: conduktor-console
+    environment:
+      CDK_CLUSTERS_0_ID: 'kafka-kraft-in-docker'
+      CDK_CLUSTERS_0_NAME: 'single-broker-kraft-kafka'
+      CDK_CLUSTERS_0_BOOTSTRAPSERVERS: 'datahub-kafka-broker0:29092'
+      CDK_CLUSTERS_0_SCHEMAREGISTRY_URL: 'http://datahub-schema-registry:8081'
+      CDK_DATABASE_URL: "postgresql://conduktor:conduktor@conduktor-metastore:5432/conduktor"
+      CDK_MONITORING_CORTEX-URL: http://conduktor-cortex:9009/
+      CDK_MONITORING_ALERT-MANAGER-URL: http://conduktor-cortex:9010/
+      CDK_MONITORING_CALLBACK-URL: http://conduktor-console:8080/monitoring/api/
+      CDK_MONITORING_NOTIFICATIONS-CALLBACK-URL: http://localhost:8080
+      CDK_LISTENING_PORT: 8080
+    ports:
+      - '9000:8080'
+    volumes:
+      - vol-conduktor-data:/var/conduktor
+    depends_on:
+      <<: *depends-on-kafka-cluster
+      conduktor-metastore:
+        condition: service_healthy
+    restart: on-failure:5
+
+  conduktor-metastore:
+    image: *postgres-image
+    container_name: conduktor-metastore
+    hostname: conduktor-metastore
+    environment:
+      POSTGRES_USER: 'conduktor'
+      POSTGRES_PASSWORD: 'conduktor'
+      POSTGRES_DB: 'conduktor'
+      POSTGRES_HOST_AUTH_METHOD: "scram-sha-256"
+    ports:
+      - '5432'
+    volumes:
+      - vol-conduktor-metastore:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U conduktor"]
+      interval: 5s
+      timeout: 10s
+      retries: 5
+    restart: on-failure:5
+
+  conduktor-cortex:
+    image: *conduktor-cortex-image
+    container_name: conduktor-cortex
+    environment:
+      CDK_CONSOLE-URL: "http://conduktor-console:8080"
+    ports:
+      - "9009:9009" # cortex api
+      - "9010:9010" # alertmanager api
+      - "9091:9090" # prometheus api
+    restart: on-failure:5
+
+volumes:
+  vol-datahub-kafka-broker0:
+    name: vol-datahub-kafka-broker0
+  vol-datahub-pgdata:
+    name: vol-datahub-pgdata
+  vol-datahub-osdata:
+    name: vol-datahub-osdata
+  vol-conduktor-data:
+    name: vol-conduktor-data
+  vol-conduktor-metastore:
+    name: vol-conduktor-metastore
