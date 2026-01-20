@@ -1,0 +1,118 @@
+x-postgres-image: &postgres-image postgres:${POSTGRES_VERSION:-18-alpine}
+
+x-airflow-common:
+  &airflow-common
+  image: apache/airflow:2.10.5-python3.11-custom
+  build:
+    context: .
+    dockerfile: Dockerfile.LocalExecutor
+  pull_policy: missing
+  user: "${AIRFLOW_UID:-50000}:0"
+  environment:
+    &airflow-common-env
+    AIRFLOW__CORE__FERNET_KEY: ''
+    AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
+    AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+    AIRFLOW__CORE__EXECUTOR: LocalExecutor
+    AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK: 'true'
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow-metastore/airflow
+    AIRFLOW__API__AUTH_BACKENDS: 'airflow.api.auth.backend.basic_auth,airflow.api.auth.backend.session'
+    _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-}
+    # Google SA Authentication
+    GOOGLE_APPLICATION_CREDENTIALS: "/secrets/gcp_credentials.json"
+    AIRFLOW_CONN_GOOGLE_CLOUD_DEFAULT: 'google-cloud-platform://'
+    # Airflow → DataHub config (https://docs.datahub.com/docs/lineage/airflow)
+    AIRFLOW__DATAHUB__CAPTURE_EXECUTIONS: 'true'
+    AIRFLOW__DATAHUB__CAPTURE_AIRFLOW_ASSETS: 'true'
+    AIRFLOW__DATAHUB__CAPTURE_TAGS_INFO: 'true'
+    # Airflow → Custom DAG Run Listener plugin
+    AIRFLOW__DATAHUB__ENABLE_DAG_RUN_LISTENER: 'false'
+  volumes:
+    - ${AIRFLOW_PROJ_DIR:-.}/dags:/opt/airflow/dags
+    - ${AIRFLOW_PROJ_DIR:-.}/plugins:/opt/airflow/plugins
+    - ${AIRFLOW_PROJ_DIR:-.}/logs:/opt/airflow/logs
+    - ${AIRFLOW_PROJ_DIR:-.}/config:/opt/airflow/config
+  depends_on:
+    airflow-metastore:
+      condition: service_healthy
+
+services:
+  airflow-metastore:
+    image: *postgres-image
+    container_name: airflow-metastore
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    ports:
+      - '5432'
+    volumes:
+      - vol-airflow-metastore-localexec:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U airflow"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: on-failure
+
+  airflow-scheduler:
+    <<: *airflow-common
+    container_name: airflow-scheduler
+    command: ["airflow", "scheduler"]
+    ports:
+      - '8974'
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail http://localhost:8974/health"]
+      interval: 5s
+      timeout: 10s
+      retries: 5
+    restart: on-failure
+
+  airflow-triggerer:
+    <<: *airflow-common
+    container_name: airflow-triggerer
+    command: ["airflow", "triggerer"]
+    healthcheck:
+      test: ["CMD-SHELL", 'airflow jobs check --job-type TriggererJob --hostname "$${HOSTNAME}"']
+      interval: 5s
+      timeout: 10s
+      retries: 5
+    restart: on-failure
+
+  airflow-web:
+    <<: *airflow-common
+    container_name: airflow-web
+    command: ["airflow", "webserver"]
+    ports:
+      - '8080:8080'
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail http://localhost:8080/health"]
+      interval: 5s
+      timeout: 10s
+      retries: 5
+    restart: on-failure
+
+  airflow-init:
+    <<: *airflow-common
+    container_name: airflow-init
+    user: "0:0"
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - |
+        mkdir -p /sources/logs /sources/dags /sources/plugins
+        chown -R "${AIRFLOW_UID}:0" /sources/{logs,dags,plugins}
+        exec /entrypoint airflow version
+    environment:
+      <<: *airflow-common-env
+      _AIRFLOW_DB_MIGRATE: 'true'
+      _AIRFLOW_WWW_USER_CREATE: 'true'
+      _AIRFLOW_WWW_USER_USERNAME: ${_AIRFLOW_WWW_USER_USERNAME:-airflow}
+      _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD:-airflow}
+      _PIP_ADDITIONAL_REQUIREMENTS: ''
+    volumes:
+      - ${AIRFLOW_PROJ_DIR:-.}:/sources
+
+volumes:
+  vol-airflow-metastore-localexec:
+    name: vol-airflow-metastore-localexec
