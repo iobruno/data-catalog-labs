@@ -1,0 +1,11 @@
+version: 2
+
+sources:
+  - name: hackernews_raw
+    database: "{{ env_var('DBT_BIGQUERY_PROJECT') }}"
+    schema:   "{{ env_var('DBT_BIGQUERY_SOURCE_DATASET') }}"
+    tables:
+      - name: frontpage_items
+      - name: jobs_items
+      - name: newcomments_items
+      - name: newest_items
