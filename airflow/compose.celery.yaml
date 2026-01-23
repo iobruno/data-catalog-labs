@@ -21,11 +21,15 @@ x-airflow-common:
     AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow@airflow-metastore/airflow
     AIRFLOW__CELERY__BROKER_URL: redis://:@airflow-redis:6379/0
     _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-}
+    # Google SA Auth
+    AIRFLOW_CONN_GOOGLE_CLOUD_DEFAULT: 'google-cloud-platform://?key_path=%2Fsecrets%2Fgcp_credentials.json'
   volumes:
     - ${AIRFLOW_PROJ_DIR:-.}/dags:/opt/airflow/dags
     - ${AIRFLOW_PROJ_DIR:-.}/plugins:/opt/airflow/plugins
     - ${AIRFLOW_PROJ_DIR:-.}/logs:/opt/airflow/logs
     - ${AIRFLOW_PROJ_DIR:-.}/config:/opt/airflow/config
+    - ${GOOGLE_APPLICATION_CREDENTIALS:?GOOGLE_APPLICATION_CREDENTIALS is missing}:/secrets/gcp_credentials.json
+    - /var/run/docker.sock:/var/run/docker.sock  # required for DockerOperator
   depends_on:
     airflow-metastore:
       condition: service_healthy
@@ -45,7 +49,7 @@ services:
     volumes:
       - vol-airflow-metastore-celeryexec:/var/lib/postgresql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U airflow"]
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER"]
       interval: 5s
       timeout: 3s
       retries: 5

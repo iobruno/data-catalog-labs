@@ -15,7 +15,7 @@ It also uses the same base image as that available in [GCP Composer for Airflow]
 
 **1.** Start setting up the infrastructure in Docker with:
 ```shell
-docker compose up -d
+docker compose up --build -d
 ```
 
 The default [compose.yaml](./compose.yaml) is a symlink to the **LocalExecutor**. 
@@ -23,19 +23,31 @@ The default [compose.yaml](./compose.yaml) is a symlink to the **LocalExecutor**
 Alternatively you can run it with the **CeleryExecutor** with:
 
 ```shell
-docker compose -f compose.celery.yaml up -d
+docker compose -f compose.celery.yaml up --build -d
 ```
 
-**2.** Airflow WebUI can be accessed at:
-```shell
-open http://localhost:8080
+**2.** Setup a Connection to DataHub:
+
+```txt
+Connection Id: datahub_rest_default
+Connection Type: DataHub REST Server
+Server Endpoint: http://host.docker.internal:9090
+Password: <blank>
 ```
 
-**3.** Airflow DAGs:
+**3.** Setup an Airflow Connections to Airbyte:
+```txt
+Connection Id: airbyte_default
+Connection Type: Airbyte
 
-To deploy Airflow DAGs, just move them inside the [dags](dags/) folder and Airflow should pick it up soon enough
+Host: http://host.docker.internal:8000/api/public/v1/
+Token URL: <blank>
+
+Client ID: <Client-ID>
+Client Secret: <Client-Secret>
+```
+
 
 ## TODO's:
 - [x] PEP-517: Packaging and dependency management with `uv`
-- [x] Code format/lint with `ruff`
-- [ ] Run Airflow DAGs on Docker
+- [x] Run Airflow DAGs on Docker
