@@ -1,9 +1,7 @@
-x-airflow-image: &airflow-image apache/airflow:slim-2.10.5-python3.11-local
 x-postgres-image: &postgres-image postgres:${POSTGRES_VERSION:-18.1-alpine}
 
 x-airflow-common:
   &airflow-common
-  image: *airflow-image
   build:
     context: .
     dockerfile: Dockerfile.LocalExecutor

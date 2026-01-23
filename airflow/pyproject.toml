@@ -6,8 +6,14 @@ readme = "README.md"
 requires-python = ">=3.11,<3.12"
 
 dependencies = [
-    "sqlalchemy>=1.4.54,<2.0",                         # Airflow doesn't yet support SQLAlchemy 2.x
-    "psycopg2-binary==2.9.10",                         # psycopg3 is only supported by SQLAlchemy 2.0+
+    "apache-airflow>=2.10.5,<2.11",                     # pin to 2.x to prevent airbyte-api from upgrading
+    "sqlalchemy>=1.4.54,<2.0",                          # Airflow doesn't yet support SQLAlchemy 2.x
+    "psycopg2-binary==2.9.11",                          # psycopg3 is only supported by SQLAlchemy 2.0+
+
+    "apache-airflow-providers-airbyte==3.9.0",          # Airbyte operator (5.x for Airbyte 1.0+)
+    "apache-airflow-providers-docker>=4.4.5,<4.5",      # Docker operator for running containers
+    "apache-airflow-providers-openlineage>=2.8.0",      # OpenLineage emitter for Airflow 
+    "acryl-datahub-airflow-plugin",                     # DataHub extension for OpenLineage
 ]
 
 [project.optional-dependencies]
@@ -19,6 +25,7 @@ celery = [
 [dependency-groups]
 dev = [
     "ruff>=0.14.14",
+    "jupyterlab>=4.5.3",
 ]
 
 [tool.setuptools.packages.find]

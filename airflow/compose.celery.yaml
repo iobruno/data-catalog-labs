@@ -27,6 +27,7 @@ x-airflow-common:
     - ${AIRFLOW_PROJ_DIR:-.}/plugins:/opt/airflow/plugins
     - ${AIRFLOW_PROJ_DIR:-.}/logs:/opt/airflow/logs
     - ${AIRFLOW_PROJ_DIR:-.}/config:/opt/airflow/config
+    - /var/run/docker.sock:/var/run/docker.sock  # required for DockerOperator
   depends_on:
     airflow-metastore:
       condition: service_healthy
