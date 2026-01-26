@@ -29,6 +29,12 @@ source:
       url_subdir: "dbt/"
 
 sink:
-  type: "datahub-rest"
+  type: "datahub-kafka"
   config:
-    server: "http://host.docker.internal:9090"
+    connection:
+     bootstrap: "host.docker.internal:9093"
+     schema_registry_url: "http://host.docker.internal:8081"
+
+  # type: "datahub-rest"
+  # config:
+  #   server: "http://host.docker.internal:9090"

@@ -51,47 +51,80 @@ dbt deps
 
 4.2. Run dbt run to trigger the dbt models to run
 ```shell
-dbt build
+dbt build --target [prod|dev]
 
 # Alternatively you can run only a subset of the models with:
 
 ## +models/staging: Runs the dependencies/preceding models first that lead 
 ## to 'models/staging', and then the target models
-dbt [build|run] --select +models/staging
+dbt build --target [prod|dev] --select +models/staging
 
 ## models/staging+: Runs the target models first, and then all models that depend on it
-dbt [build|run] --select models/staging+
+dbt build --target [prod|dev] --select models/staging+
 ```
 
-**5.** Generate the Docs and the Data Lineage graph with:
+**5.** (Optional) If you're ingesting dbt-metadata to DataHub,
+
+5.1A. If you're using the `datahub-kafka` on [dbt_datahub.yml](./dbt_datahub.yml), run:
 ```shell
-dbt docs generate
-dbt docs serve
+export DATAHUB_KAFKA_BOOSTRAP_SERVERS=host.docker.internal:9093
+export DATAHUB_SCHEMA_REGISTRY_URL=http://host.docker.internal:8081
 ```
 
-Access the generated docs at:
+5.1B: Otherwise, if using the `datahub-rest` on [dbt_datahub.yml](./dbt_datahub.yml), run:
 ```shell
-open http://localhost:8080
+export DATAHUB_REST_SERVER=http://host.docker.internal:9090
 ```
+
+5.2. Make sure to backup `target/run_results.json`, as they're overwritten by `dbt docs generate`:
+```shell
+cp target/run_results.json target/run_results_backup.json
+```
+
+**6.** dbt Metadata and Lineage
+
+6.1. Generate the docs with (overrides `target/run_results.json`):
+```shell
+dbt docs generate --target [prod|dev]
+```
+
+6.2. (Optional) You can see the generated artifacts at [http://localhost:8080](http://localhost:8080) with:
+```shell
+dbt docs serve [--port=<port>]
+```
+
+**7.** Data Catalog ingest
+
+7.1. Recover the dbt executions (`runs`):
+```shell
+cp target/run_results_backup.json target/run_results.json
+```
+
+7.2. Ingest into DataHub:
+```shell
+datahub ingest -c dbt_datahub.yml
+```
+
 
 ## Containerization
 
 **1.** Build the Docker Image with:
 
 ```shell
-docker build -t dbt-bigquery:latest . --no-cache
+docker build -t datahub-dbt-bigquery-ingest:latest . --no-cache
 ```
 
 **2.** Start a container with it:
 ```shell
-docker run -d --rm \
+docker run --rm \
   -e DBT_BIGQUERY_PROJECT=iobruno-gcp-labs \
   -e DBT_BIGQUERY_SOURCE_DATASET=hackernews_rss_raw \
   -e DBT_BIGQUERY_TARGET_DATASET=hackernews_rss \
   -e DBT_BIGQUERY_DATASET_LOCATION=us-central1 \
-  -v /PATH/TO/YOUR/gcp_credentials.json:/secrets/gcp_credentials.json \
-  --name dbt-bigquery \
-  dbt-bigquery
+  -e DATAHUB_KAFKA_BOOSTRAP_SERVERS=host.docker.internal:9093 \
+  -e DATAHUB_SCHEMA_REGISTRY_URL=http://host.docker.internal:8081 \
+  -v ${GOOGLE_APPLICATION_CREDENTIALS}:/secrets/gcp_credentials.json \
+  datahub-dbt-bigquery-ingest:latest
 ```
 
 
@@ -100,4 +133,5 @@ docker run -d --rm \
 - [x] Bootstrap dbt with BigQuery Adapter ([dbt-bigquery](https://docs.getdbt.com/docs/core/connect-data-platform/bigquery-setup))
 - [x] Generate and serve docs and Data Lineage Graphs locally
 - [x] Add dbt macro to configure target schemas dinamically
-- [ ] Run `dbt-core` in Docker
+- [x] Run `dbt-core` in Docker
+- [x] Verify the Metadata and Data Lineage for dbt and BigQuery tables on DataHub
