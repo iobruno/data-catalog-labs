@@ -16,6 +16,7 @@ ADD seeds                                           /dbt/seeds
 ADD tests                                           /dbt/tests
 ADD dbt_project.yml package-lock.yml packages.yml   /dbt/
 ADD profiles.tmpl.yml                               /dbt/profiles.yml
+ADD openlineage.yml                                 /dbt/openlineage.yml
 
 # Runner stage
 FROM python:3.13-slim AS runner
@@ -32,4 +33,4 @@ ENV DBT_BIGQUERY_DATASET=
 ENV DBT_BIGQUERY_DATASET_LOCATION=
 ENV GOOGLE_APPLICATION_CREDENTIALS=/secrets/gcp_credentials.json
 
-ENTRYPOINT ["sh", "-c", "dbt deps && dbt seed --target prod && dbt run --target prod && dbt docs generate --target prod"]
+ENTRYPOINT ["sh", "-c", "dbt deps && dbt-ol seed --target prod && dbt-ol run --target prod"]

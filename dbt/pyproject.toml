@@ -8,11 +8,12 @@ requires-python = ">=3.12,<3.14"
 dependencies = [
     "dbt-core>=1.11.2,<2.0",
     "dbt-bigquery>=1.11.0,<2.0",
+    "openlineage-dbt>=1.43.0,<2.0",
 ]
 
 [dependency-groups]
 dev = [
-    "ruff>=0.14.11",
+    "ruff>=0.14.14",
 ]
 
 [tool.ruff]

@@ -1,0 +1,8 @@
+transport:
+  type: composite
+  transports:
+
+    datahub:
+      type: http
+      url: http://host.docker.internal:9090
+      endpoint: /openapi/openlineage/api/v1/lineage

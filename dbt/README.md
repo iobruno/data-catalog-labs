@@ -90,7 +90,6 @@ docker run -d --rm \
   -e DBT_BIGQUERY_TARGET_DATASET=hackernews_rss \
   -e DBT_BIGQUERY_DATASET_LOCATION=us-central1 \
   -v /PATH/TO/YOUR/gcp_credentials.json:/secrets/gcp_credentials.json \
-  -v vol-dbt-openlineage-artifacts:/dbt/target \
   --name dbt-bigquery \
   dbt-bigquery
 ```
