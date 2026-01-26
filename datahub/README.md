@@ -56,27 +56,30 @@ docker compose up -d
 **3.** (Optional) Access [Conduktor Web UI for Kafka on http://localhost:9000](http://localhost:9000)
 
 
-## dbt OpenLineage Ingestion
+## DataHub Custom Recipe Ingestion
 
-**4.1.** Install dependencies from pyproject.toml to generate/update uv.lock:
+### BigQuery
+
+**4.1.** Local Run:
 ```shell
-uv sync && source .venv/bin/activate
+export DATAHUB_KAFKA_BOOSTRAP_SERVERS=host.docker.internal:9092
+export DATAHUB_SCHEMA_REGISTRY_URL=http://host.docker.internal:8081
+```
+```shell
+uv run datahub ingest -c recipes/bigquery.yml
 ```
 
-**4.2.** Build the Docker Image for the recipe ingestion (used for dbt-core) as it'll be used by Airflow:
+**4.2** Docker run:
 ```shell
-docker build -t datahub-ingest:latest . --no-cache
+docker build -t datahub-bigquery-ingest:latest -f Dockerfile.bigquery . --no-cache
 ```
-
-**4.3.** Then, trigger an execution with:
 ```shell
 docker run --rm \
-  -v vol-dbt-openlineage-artifacts:/datahub/dbt-openlineage-artifacts/ \
-  --name datahub-ingest \
-  datahub-ingest
-``` 
-
-**IMPORTANT**: The volume `vol-dbt-openlineage-artifacts` is created when manually executing the [dbt run via Docker execution](../dbt/) or through Airflow DAG execution
+  -e DATAHUB_KAFKA_BOOSTRAP_SERVERS=host.docker.internal:9093 \
+  -e DATAHUB_SCHEMA_REGISTRY_URL=http://host.docker.internal:8081 \
+  -v ${GOOGLE_APPLICATION_CREDENTIALS}:/secrets/gcp_credentials.json \
+  datahub-bigquery-ingest:latest
+```
 
 
 ## TODO's:
