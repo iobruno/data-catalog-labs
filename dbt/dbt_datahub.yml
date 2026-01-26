@@ -1,0 +1,34 @@
+source:
+  type: dbt
+  config:
+    manifest_path: "./target/manifest.json"
+    catalog_path: "./target/catalog.json"
+    run_results_paths:
+      - "./target/run_results.json"
+
+    target_platform: "bigquery"
+
+    include_column_lineage: true
+    enable_meta_mapping: true
+    write_semantics: "OVERRIDE"
+
+    entities_enabled:
+      models: "YES"
+      model_performance: "YES"
+
+      sources: "YES"
+      seeds: "YES"
+      snapshots: "YES"
+
+      test_definitions: "YES"
+      test_results: "YES"
+
+    git_info:
+      repo: "https://github.com/iobruno/data-catalog-labs"
+      branch: "master"
+      url_subdir: "dbt/"
+
+sink:
+  type: "datahub-rest"
+  config:
+    server: "http://host.docker.internal:9090"
