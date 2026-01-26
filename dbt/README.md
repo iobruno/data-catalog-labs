@@ -100,4 +100,4 @@ docker run -d --rm \
 - [x] Bootstrap dbt with BigQuery Adapter ([dbt-bigquery](https://docs.getdbt.com/docs/core/connect-data-platform/bigquery-setup))
 - [x] Generate and serve docs and Data Lineage Graphs locally
 - [x] Add dbt macro to configure target schemas dinamically
-- [ ] Run `dbt-core` in Docker
+- [x] Run `dbt-core` in Docker
