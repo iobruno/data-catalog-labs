@@ -22,20 +22,36 @@ open http://localhost:9002
 open http://localhost:9000
 ```
 
+## DataHub Custom Recipe Ingestion
 
-## dbt OpenLineage Ingestion
-
-**4.1.** Install dependencies from pyproject.toml to generate/update uv.lock:
+Install dependencies from pyproject.toml to generate/update uv.lock:
 ```shell
 uv sync && source .venv/bin/activate
 ```
 
-**4.2.** Build the Docker Image for the recipe ingestion (used for dbt-core) as it'll be used by Airflow:
+
+### BigQuery
+
+**4.1.** Update GCP `project_ids` in [bigquery.yaml](./recipes/bigquery.yaml):
+```yaml
+project_ids:
+  - your-project-id
+```
+
+**4.2.** Run:
+```shell
+datahub ingest -c recipes/bigquery.yaml
+```
+
+
+### dbt (via Docker - depends on `dbt-bigquery` )
+
+**5.1.** Build the Docker Image for the recipe ingestion (used for dbt-core) as it'll be used by Airflow:
 ```shell
 docker build -t datahub-ingest:latest . --no-cache
 ```
 
-**4.3.** Then, trigger an execution with:
+**5.2.** Then, trigger an execution with:
 ```shell
 docker run --rm \
   -v vol-dbt-openlineage-artifacts:/datahub/dbt-openlineage-artifacts/ \
@@ -43,7 +59,7 @@ docker run --rm \
   datahub-ingest
 ``` 
 
-**IMPORTANT**: The volume `vol-dbt-openlineage-artifacts` is created when manually executing the [dbt run via Docker execution](../dbt/) or through Airflow DAG execution
+**IMPORTANT**: The Docker volume `vol-dbt-openlineage-artifacts` is created during the [dbt-bigquery](../dbt/) execution. Follow the [dbt/README.md - Containerization](../dbt/README.md#containerization) for details
 
 
 ## TODO's:
