@@ -5,9 +5,9 @@ from airflow.providers.airbyte.operators.airbyte import AirbyteTriggerSyncOperat
 from airflow.providers.docker.operators.docker import DockerOperator
 from docker.types import Mount
 
-HACKERNEWS_RSS_FRONT_CONN_ID = "e7c868c6-d8c8-46e0-8fcb-579a03783011"
-HACKERNEWS_RSS_NEWEST_CONN_ID = "282c8dd3-3fbb-4c2e-b7d7-92a3e909639d"
-HACKERNEWS_RSS_COMMENTS_CONN_ID = "282c8dd3-3fbb-4c2e-b7d7-92a3e909639d"
+HACKERNEWS_RSS_FRONT_CONN_ID = "e37988e6-8ed5-465c-abb2-150639819c62"
+HACKERNEWS_RSS_COMMENTS_CONN_ID = "2fda0c2f-6a50-427e-af1b-25050ad40384"
+HACKERNEWS_RSS_NEWEST_CONN_ID = "4ca6f367-93f7-4f88-b0fc-b765daf09a28"
 
 with DAG(
     dag_id="hackernews_rss_bigquery",
@@ -72,25 +72,7 @@ with DAG(
         ],
     )
 
-    dbt_lineage_export = DockerOperator(
-        task_id="dbt_lineage_export",
-        image="datahub-ingest:latest",
-        container_name="datahub-ingest",
-        auto_remove="force",
-        docker_url="unix://var/run/docker.sock",
-        network_mode="bridge",
-        mounts=[
-            Mount(
-                source="vol-dbt-openlineage-artifacts",
-                target="/datahub/dbt-openlineage-artifacts/",
-                type="volume",
-                read_only=True,
-            )
-        ],
-    )
-
     (
         [hackernews_rss_front, hackernews_rss_newest, hackernews_rss_comments]
         >> dbt_execution
-        >> dbt_lineage_export
     )

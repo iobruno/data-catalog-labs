@@ -23,6 +23,10 @@ x-airflow-common:
     _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-}
     # Google SA Auth
     AIRFLOW_CONN_GOOGLE_CLOUD_DEFAULT: 'google-cloud-platform://?key_path=%2Fsecrets%2Fgcp_credentials.json'
+    # Airflow → DataHub config (https://docs.datahub.com/docs/lineage/airflow)
+    AIRFLOW__DATAHUB__CAPTURE_EXECUTIONS: 'true'
+    AIRFLOW__DATAHUB__CAPTURE_AIRFLOW_ASSETS: 'true'
+    AIRFLOW__DATAHUB__CAPTURE_TAGS_INFO: 'true'
   volumes:
     - ${AIRFLOW_PROJ_DIR:-.}/dags:/opt/airflow/dags
     - ${AIRFLOW_PROJ_DIR:-.}/plugins:/opt/airflow/plugins
