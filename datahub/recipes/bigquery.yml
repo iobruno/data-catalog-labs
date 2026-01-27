@@ -21,6 +21,13 @@ source:
       enabled: false  # disabled by default as it can be resource intensive
 
 sink:
-  type: datahub-rest
+  type: "datahub-kafka"
   config:
-    server: "http://localhost:9090"
+    connection:
+     bootstrap: "host.docker.internal:9093"
+     schema_registry_url: "http://host.docker.internal:8081"
+
+  # Alternatively, you can use DataHub REST Server
+  # type: datahub-rest
+  # config:
+  #   server: "http://host.docker.internal:9090"

@@ -1,5 +1,5 @@
 # Builder stage
-FROM ghcr.io/astral-sh/uv:python3.14-trixie-slim AS builder
+FROM ghcr.io/astral-sh/uv:python3.11-trixie-slim AS builder
 
 WORKDIR /datahub
 
@@ -11,12 +11,14 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     uv pip install --system --no-cache .
 
 # Builder stage
-FROM python:3.14-slim AS runner
+FROM python:3.11-slim AS runner
 
 WORKDIR /datahub/
 
-COPY --from=builder /usr/local/lib/python3.14/site-packages /usr/local/lib/python3.14/site-packages
+COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 COPY --from=builder /datahub /datahub/
 
-ENTRYPOINT ["sh", "-c", "datahub ingest -c recipes/dbt_openlineage.yaml"]
+ENV GOOGLE_APPLICATION_CREDENTIALS=/secrets/gcp_credentials.json
+
+ENTRYPOINT ["sh", "-c", "datahub ingest -c recipes/bigquery.yml"]
