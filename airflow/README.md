@@ -27,7 +27,6 @@ docker compose -f compose.celery.yaml up --build -d
 ```
 
 **2.** Setup a Connection to DataHub:
-
 ```txt
 Connection Id: datahub_rest_default
 Connection Type: DataHub REST Server
