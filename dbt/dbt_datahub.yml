@@ -32,9 +32,10 @@ sink:
   type: "datahub-kafka"
   config:
     connection:
-     bootstrap: "host.docker.internal:9093"
-     schema_registry_url: "http://host.docker.internal:8081"
+      bootstrap: "${DATAHUB_KAFKA_BOOSTRAP_SERVERS}"
+      schema_registry_url: "${DATAHUB_SCHEMA_REGISTRY_URL}"
 
-  # type: "datahub-rest"
+  # Alternatively, you can use DataHub REST Server
+  # type: datahub-rest
   # config:
-  #   server: "http://host.docker.internal:9090"
+  #   server: "${DATAHUB_REST_SERVER}"
