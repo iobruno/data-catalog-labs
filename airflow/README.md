@@ -15,7 +15,7 @@ It also uses the same base image as that available in [GCP Composer for Airflow]
 
 **1.** Start setting up the infrastructure in Docker with:
 ```shell
-docker compose up --build --force-recreate -d
+docker compose up --build -d
 ```
 
 The default [compose.yaml](./compose.yaml) is a symlink to the **LocalExecutor**. 
@@ -23,7 +23,7 @@ The default [compose.yaml](./compose.yaml) is a symlink to the **LocalExecutor**
 Alternatively you can run it with the **CeleryExecutor** with:
 
 ```shell
-docker compose -f compose.celery.yaml up --build --force-recreate -d
+docker compose -f compose.celery.yaml up --build -d
 ```
 
 **2.** Setup an Airflow Connections to Airbyte:

@@ -17,6 +17,12 @@ x-airflow-common:
     AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow-metastore/airflow
     AIRFLOW__API__AUTH_BACKENDS: 'airflow.api.auth.backend.basic_auth,airflow.api.auth.backend.session'
     _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-}
+
+    # Airflow → DataHub config (https://docs.datahub.com/docs/lineage/airflow)
+    AIRFLOW__DATAHUB__CAPTURE_EXECUTIONS: 'true'
+    AIRFLOW__DATAHUB__CAPTURE_AIRFLOW_ASSETS: 'true'
+    AIRFLOW__DATAHUB__CAPTURE_TAGS_INFO: 'true'
+
   volumes:
     - ${AIRFLOW_PROJ_DIR:-.}/dags:/opt/airflow/dags
     - ${AIRFLOW_PROJ_DIR:-.}/plugins:/opt/airflow/plugins
