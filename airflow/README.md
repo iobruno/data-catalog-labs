@@ -27,7 +27,6 @@ docker compose -f compose.celery.yaml up --build -d
 ```
 
 **2.** Setup an Airflow Connections to Airbyte:
-
 ```txt
 Connection Id: airbyte_default
 Connection Type: Airbyte
@@ -39,15 +38,12 @@ Password: <Password>
 ```
 
 **3.** Setup a Connection to DataHub:
-
 ```txt
 Connection Id: datahub_rest_default
 Connection Type: DataHub REST Server
 Server Endpoint: http://host.docker.internal:9090
 Password: <blank>
 ```
-
-You should be able to successfully run the DAG and see the Data Lineage on DataHub
 
 
 ## TODO's:

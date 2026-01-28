@@ -23,6 +23,9 @@ x-airflow-common:
     AIRFLOW__DATAHUB__CAPTURE_AIRFLOW_ASSETS: 'true'
     AIRFLOW__DATAHUB__CAPTURE_TAGS_INFO: 'true'
 
+    # Airflow → Custom DAG Run Listener plugin
+    AIRFLOW__DATAHUB__ENABLE_DAG_RUN_LISTENER: 'false'
+
   volumes:
     - ${AIRFLOW_PROJ_DIR:-.}/dags:/opt/airflow/dags
     - ${AIRFLOW_PROJ_DIR:-.}/plugins:/opt/airflow/plugins

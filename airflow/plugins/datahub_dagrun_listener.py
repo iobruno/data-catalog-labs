@@ -6,13 +6,14 @@ This plugin fills the gap by emitting DataFlow run start/completion events.
 
 See: https://github.com/datahub-project/datahub/blob/master/metadata-ingestion-modules/airflow-plugin/src/datahub_airflow_plugin/airflow2/datahub_listener.py#L1068
 """
+
 import logging
-from typing import Optional
+from os import getenv
+from typing import ClassVar
 
 from airflow.listeners import hookimpl
 from airflow.models import DagRun
 from airflow.plugins_manager import AirflowPlugin
-
 from datahub_airflow_plugin._config import DatahubLineageConfig, get_lineage_config
 from datahub_airflow_plugin.client.airflow_generator import AirflowGenerator
 
@@ -24,19 +25,14 @@ class DataHubDagRunListener:
 
     def __init__(self, config: DatahubLineageConfig):
         self._config = config
-        self._emitter = None
-
-    def _get_emitter(self):
-        if self._emitter is None:
-            self._emitter = self._config.make_emitter_hook().make_emitter()
-        return self._emitter
+        self._emitter = config.make_emitter_hook().make_emitter()
+        logger.info(f"DataHub DAG run listener using {self._emitter!r}")
 
     def _should_process(self, dag_id: str) -> bool:
+        """Check if this DAG should be processed."""
         if not self._config.capture_executions:
             return False
-        if not self._config.dag_filter_pattern.allowed(dag_id):
-            return False
-        return True
+        return self._config.dag_filter_pattern.allowed(dag_id)
 
     @hookimpl
     def on_dag_run_running(self, dag_run: DagRun, msg: str) -> None:
@@ -45,17 +41,13 @@ class DataHubDagRunListener:
             return
 
         try:
-            emitter = self._get_emitter()
-            if not emitter:
-                return
-
             logger.info(f"Emitting DataHub DataFlow run start for {dag_run.dag_id}")
             AirflowGenerator.run_dataflow(
-                emitter=emitter,
+                emitter=self._emitter,
                 config=self._config,
                 dag_run=dag_run,
             )
-            emitter.flush()
+            self._emitter.flush()
         except Exception as e:
             logger.warning(f"Failed to emit DataFlow run start: {e}", exc_info=True)
 
@@ -66,17 +58,13 @@ class DataHubDagRunListener:
             return
 
         try:
-            emitter = self._get_emitter()
-            if not emitter:
-                return
-
             logger.info(f"Emitting DataHub DataFlow run success for {dag_run.dag_id}")
             AirflowGenerator.complete_dataflow(
-                emitter=emitter,
+                emitter=self._emitter,
                 config=self._config,
                 dag_run=dag_run,
             )
-            emitter.flush()
+            self._emitter.flush()
         except Exception as e:
             logger.warning(f"Failed to emit DataFlow run success: {e}", exc_info=True)
 
@@ -87,23 +75,24 @@ class DataHubDagRunListener:
             return
 
         try:
-            emitter = self._get_emitter()
-            if not emitter:
-                return
-
             logger.info(f"Emitting DataHub DataFlow run failure for {dag_run.dag_id}")
             AirflowGenerator.complete_dataflow(
-                emitter=emitter,
+                emitter=self._emitter,
                 config=self._config,
                 dag_run=dag_run,
             )
-            emitter.flush()
+            self._emitter.flush()
         except Exception as e:
             logger.warning(f"Failed to emit DataFlow run failure: {e}", exc_info=True)
 
 
-def get_dagrun_listener() -> Optional[DataHubDagRunListener]:
+def get_dagrun_listener() -> DataHubDagRunListener | None:
     """Create and return the DAG run listener if plugin is enabled."""
+    is_enabled = getenv("AIRFLOW__DATAHUB__ENABLE_DAG_RUN_LISTENER", "false").lower() == 'true'
+
+    if not is_enabled:
+        return None
+
     try:
         config = get_lineage_config()
         if config.enabled:
@@ -111,6 +100,7 @@ def get_dagrun_listener() -> Optional[DataHubDagRunListener]:
             return DataHubDagRunListener(config=config)
     except Exception as e:
         logger.warning(f"Failed to initialize DataHub DAG run listener: {e}")
+
     return None
 
 
@@ -118,4 +108,4 @@ class DataHubDagRunPlugin(AirflowPlugin):
     """Airflow plugin that registers the DataHub DAG run listener."""
 
     name = "datahub_dagrun_plugin"
-    listeners = list(filter(None, [get_dagrun_listener()]))
+    listeners: ClassVar[list] = list(filter(None, [get_dagrun_listener()]))
