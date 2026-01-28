@@ -82,8 +82,20 @@ docker run --rm \
 ```
 
 
+## GraphQL Queries
+
+To get a better idea of how the entities are modeles on DataHub as `dataFlow`, `dataJob`, `dataProcessInstance`, `dataSets`, among others,
+
+You can use the following Postman Collection of GraphQL queries:
+
+```
+https://www.postman.com/iobruno/workspace/vault/collection/6983fb194d8a7c94d2b82c6b?action=share&creator=52118286
+```
+
+
 ## TODO's:
 - [x] Single-broker Kafka Cluster (with KRaft)
 - [x] Kafka Admin UI: `Conduktor Console`
 - [x] Spin-up DataHub using Kafka-Kraft
 - [x] Build a Docker Image for ingesting custom recipes (e.g.: dbt-core)
+- [x] Create a Repository/Collection of useful GraphQL Queries for debugging
