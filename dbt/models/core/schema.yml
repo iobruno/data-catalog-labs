@@ -1,0 +1,38 @@
+version: 2
+
+models:
+  - name: dim_articles
+    description: 'Dimension table combining hot and newest articles from HackerNews'
+    columns:
+      - name: uid
+        data_type: STRING
+        description: 'Surrogate key'
+        tests:
+          - not_null
+          - unique
+
+      - name: title
+        data_type: STRING
+        description: 'Article title'
+        tests:
+          - not_null
+
+      - name: username
+        data_type: STRING
+        description: 'Author username'
+        tests:
+          - not_null
+
+      - name: url
+        data_type: STRING
+        description: 'Original article URL (guid)'
+        tests:
+          - not_null
+
+      - name: redirect_url
+        data_type: STRING
+        description: 'HackerNews redirect URL'
+
+      - name: published_at
+        data_type: STRING
+        description: 'Article publication timestamp'
