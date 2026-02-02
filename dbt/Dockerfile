@@ -33,4 +33,4 @@ ENV DBT_BIGQUERY_DATASET=
 ENV DBT_BIGQUERY_DATASET_LOCATION=
 ENV GOOGLE_APPLICATION_CREDENTIALS=/secrets/gcp_credentials.json
 
-ENTRYPOINT ["sh", "-c", "dbt deps && dbt seed --target prod && dbt run --target prod && cp target/run_results.json target/run_results_backup.json && dbt docs generate --target prod && cp target/run_results_backup.json target/run_results.json && datahub ingest -c /dbt/dbt_datahub.yml"]
+ENTRYPOINT ["sh", "-c", "dbt deps && dbt build --target prod && cp target/run_results.json target/run_results_backup.json && dbt docs generate --target prod && cp target/run_results_backup.json target/run_results.json && datahub ingest -c /dbt/dbt_datahub.yml"]
