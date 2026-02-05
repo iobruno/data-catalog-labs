@@ -12,6 +12,7 @@ from datahub.configuration.common import ConfigModel
 from datahub.ingestion.api.common import PipelineContext
 from datahub.ingestion.api.source import Source, SourceReport
 from datahub.ingestion.api.workunit import MetadataWorkUnit
+from datahub.metadata.com.linkedin.pegasus2avro.mxe import MetadataChangeEvent
 from datahub.metadata.schema_classes import (
     DatasetSnapshotClass,
     DatasetPropertiesClass,
@@ -20,10 +21,13 @@ from datahub.metadata.schema_classes import (
     DataJobSnapshotClass,
     DataJobInfoClass,
     DataJobInputOutputClass,
+    DataPlatformInfoClass,
+    PlatformTypeClass,
     OwnershipClass,
     OwnershipTypeClass,
     OwnerClass,
 )
+from datahub.emitter.mcp import MetadataChangeProposalWrapper
 
 logger = logging.getLogger(__name__)
 
@@ -156,7 +160,7 @@ class AirbyteSource(Source):
             url = f"{api_base}/jobs"
             params = {
                 "configTypes": "sync",  # Query param format
-                "configId": connection_id,
+                "connectionId": connection_id,
                 "limit": limit,
             }
             response = self.session.get(url, params=params)
@@ -202,9 +206,8 @@ class AirbyteSource(Source):
             ],
         )
 
-        return MetadataWorkUnit(
-            id=f"airbyte-connection-{connection_id}", mce=flow_snapshot
-        )
+        mce = MetadataChangeEvent(proposedSnapshot=flow_snapshot)
+        return MetadataWorkUnit(id=f"airbyte-connection-{connection_id}", mce=mce)
 
     def create_source_workunit(self, source: Dict) -> MetadataWorkUnit:
         """Create a Dataset workunit for an Airbyte source."""
@@ -212,27 +215,32 @@ class AirbyteSource(Source):
         source_name = source.get("name", f"source-{source_id}")
         source_type = source.get("sourceDefinitionId", "unknown")
 
-        # Determine platform based on source type
-        platform = self._get_platform_from_source_type(source_type)
+        # Determine platform based on source type and name
+        platform = self._get_platform_from_source_type(source_type, source_name)
 
         # Create Dataset (represents the source)
         dataset_urn = f"urn:li:dataset:(urn:li:dataPlatform:{platform},{source_name},{self.config.platform_instance})"
+        qualified_name = f"{platform}.{source_name}.{self.config.platform_instance}"
         dataset_snapshot = DatasetSnapshotClass(
             urn=dataset_urn,
             aspects=[
                 DatasetPropertiesClass(
                     name=source_name,
+                    qualifiedName=qualified_name,
                     description=f"Airbyte source: {source_name}",
                     customProperties={
-                        "source_id": source_id,
-                        "source_type": source_type,
-                        "source_definition_id": source.get("sourceDefinitionId"),
+                        k: v for k, v in {
+                            "source_id": source_id,
+                            "source_type": source_type,
+                            "source_definition_id": source.get("sourceDefinitionId"),
+                        }.items() if v is not None
                     },
                 )
             ],
         )
 
-        return MetadataWorkUnit(id=f"airbyte-source-{source_id}", mce=dataset_snapshot)
+        mce = MetadataChangeEvent(proposedSnapshot=dataset_snapshot)
+        return MetadataWorkUnit(id=f"airbyte-source-{source_id}", mce=mce)
 
     def create_destination_workunit(self, destination: Dict) -> MetadataWorkUnit:
         """Create a Dataset workunit for an Airbyte destination."""
@@ -245,26 +253,31 @@ class AirbyteSource(Source):
 
         # Create Dataset (represents the destination)
         dataset_urn = f"urn:li:dataset:(urn:li:dataPlatform:{platform},{destination_name},{self.config.platform_instance})"
+        qualified_name = (
+            f"{platform}.{destination_name}.{self.config.platform_instance}"
+        )
         dataset_snapshot = DatasetSnapshotClass(
             urn=dataset_urn,
             aspects=[
                 DatasetPropertiesClass(
                     name=destination_name,
+                    qualifiedName=qualified_name,
                     description=f"Airbyte destination: {destination_name}",
                     customProperties={
-                        "destination_id": destination_id,
-                        "destination_type": destination_type,
-                        "destination_definition_id": destination.get(
-                            "destinationDefinitionId"
-                        ),
+                        k: v for k, v in {
+                            "destination_id": destination_id,
+                            "destination_type": destination_type,
+                            "destination_definition_id": destination.get(
+                                "destinationDefinitionId"
+                            ),
+                        }.items() if v is not None
                     },
                 )
             ],
         )
 
-        return MetadataWorkUnit(
-            id=f"airbyte-destination-{destination_id}", mce=dataset_snapshot
-        )
+        mce = MetadataChangeEvent(proposedSnapshot=dataset_snapshot)
+        return MetadataWorkUnit(id=f"airbyte-destination-{destination_id}", mce=mce)
 
     def create_job_workunit(self, job: Dict, connection_id: str) -> MetadataWorkUnit:
         """Create a DataJob workunit for an Airbyte sync job."""
@@ -272,8 +285,15 @@ class AirbyteSource(Source):
         job_type = job.get("configType", "sync")
 
         # Create DataJob (represents a sync run)
+        # DataJob URN format: urn:li:dataJob:(flowUrn,jobId)
+        # The flow URN must be a complete DataFlow URN
+        # Note: DataHub's URN parser expects the flow URN to be properly formatted
+        # We construct the flow URN and embed it in the job URN
         flow_urn = f"urn:li:dataFlow:(airbyte,connection-{connection_id},{self.config.platform_instance})"
-        job_urn = f"urn:li:dataJob:(airbyte,{job_id},{self.config.platform_instance})"
+
+        # For DataJob URN, we embed the flow URN directly (no encoding)
+        # The format is: urn:li:dataJob:(<flow_urn>,<job_id>)
+        job_urn = f"urn:li:dataJob:({flow_urn},{job_id})"
 
         job_snapshot = DataJobSnapshotClass(
             urn=job_urn,
@@ -296,11 +316,19 @@ class AirbyteSource(Source):
             ],
         )
 
-        return MetadataWorkUnit(id=f"airbyte-job-{job_id}", mce=job_snapshot)
+        mce = MetadataChangeEvent(proposedSnapshot=job_snapshot)
+        return MetadataWorkUnit(id=f"airbyte-job-{job_id}", mce=mce)
 
-    def _get_platform_from_source_type(self, source_type: str) -> str:
+    def _get_platform_from_source_type(
+        self, source_type: str, source_name: str = ""
+    ) -> str:
         """Map Airbyte source type to DataHub platform."""
-        # Common mappings
+        # First try to infer from source name (e.g., "rss" in name)
+        source_name_lower = source_name.lower()
+        if "rss" in source_name_lower:
+            return "rss"
+
+        # Common mappings based on source definition ID or type
         platform_map = {
             "rss": "rss",
             "postgres": "postgres",
@@ -308,7 +336,14 @@ class AirbyteSource(Source):
             "bigquery": "bigquery",
             "s3": "s3",
         }
-        return platform_map.get(source_type.lower(), "airbyte")
+        # source_type might be a UUID, so try lowercase match
+        source_type_lower = str(source_type).lower()
+        for key, platform in platform_map.items():
+            if key in source_type_lower:
+                return platform
+
+        # Fallback to a generic platform that DataHub recognizes
+        return "file"  # Use "file" as fallback for unknown sources
 
     def _get_platform_from_destination_type(self, destination_type: str) -> str:
         """Map Airbyte destination type to DataHub platform."""
@@ -321,9 +356,27 @@ class AirbyteSource(Source):
         }
         return platform_map.get(destination_type.lower(), "airbyte")
 
+    def create_platform_workunit(self) -> MetadataWorkUnit:
+        """Create a workunit to register the Airbyte platform in DataHub."""
+        platform_urn = "urn:li:dataPlatform:airbyte"
+        mcp = MetadataChangeProposalWrapper(
+            entityUrn=platform_urn,
+            aspect=DataPlatformInfoClass(
+                name="airbyte",
+                displayName="Airbyte",
+                type=PlatformTypeClass.OTHERS,
+                logoUrl="https://airbyte.com/favicon.ico",
+                datasetNameDelimiter=".",
+            ),
+        )
+        return MetadataWorkUnit(id="airbyte-platform", mcp=mcp)
+
     def get_workunits(self) -> Iterable[MetadataWorkUnit]:
         """Main method to generate workunits from Airbyte."""
         logger.info("Starting Airbyte ingestion")
+
+        # Register the Airbyte platform first
+        yield self.create_platform_workunit()
 
         # Get workspaces
         workspaces = self.get_workspaces()
@@ -371,10 +424,16 @@ class AirbyteSource(Source):
                     connection_id = connection.get("connectionId")
                     jobs = self.get_jobs(connection_id)
                     for job in jobs:
-                        yield self.create_job_workunit(job, connection_id)
-                        self.report.report_workunit(
-                            self.create_job_workunit(job, connection_id)
-                        )
+                        try:
+                            job_wu = self.create_job_workunit(job, connection_id)
+                            yield job_wu
+                            self.report.report_workunit(job_wu)
+                        except Exception as e:
+                            logger.warning(
+                                f"Failed to create job workunit for job {job.get('jobId')}: {e}"
+                            )
+                            # Continue with other jobs even if one fails
+                            continue
 
         logger.info("Completed Airbyte ingestion")
 
