@@ -5,9 +5,9 @@ from airflow.providers.airbyte.operators.airbyte import AirbyteTriggerSyncOperat
 from airflow.providers.docker.operators.docker import DockerOperator
 from docker.types import Mount
 
-HACKERNEWS_RSS_FRONT_CONN_ID = "e37988e6-8ed5-465c-abb2-150639819c62"
-HACKERNEWS_RSS_COMMENTS_CONN_ID = "2fda0c2f-6a50-427e-af1b-25050ad40384"
-HACKERNEWS_RSS_NEWEST_CONN_ID = "4ca6f367-93f7-4f88-b0fc-b765daf09a28"
+HACKERNEWS_RSS_FRONT_CONN_ID = "a69f80b8-53f0-4f3c-b742-f7d064683fb9"
+HACKERNEWS_RSS_COMMENTS_CONN_ID = "43e6123d-29b1-4172-9ab9-9430102dbf6a"
+HACKERNEWS_RSS_NEWEST_CONN_ID = "e7a66c6d-60bb-4ee0-8cf7-f88dad6dff29"
 
 with DAG(
     dag_id="hackernews_rss_bigquery",
@@ -43,6 +43,31 @@ with DAG(
         timeout=3600,
     )
 
+    airbyte_lineage_export = DockerOperator(
+        task_id="airbyte_lineage_export",
+        image="datahub-ingest:latest",
+        container_name="datahub-ingest-airbyte",
+        auto_remove="force",
+        docker_url="unix://var/run/docker.sock",
+        network_mode="bridge",
+        entrypoint="datahub ingest -c recipes/airbyte.yml",
+        environment={
+            # Airbyte API endpoint - uses /api/public/v1 prefix
+            # "AIRBYTE_SERVER_URL": "http://host.docker.internal:8000/api/public/v1",
+            # Use credentials from the airbyte_default connection
+            "AIRBYTE_API_TOKEN": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjgwMDAiLCJhdWQiOiJhaXJieXRlLXNlcnZlciIsInN1YiI6IjAwMDAwMDAwLTAwMDAtMDAwMC0wMDAwLTAwMDAwMDAwMDAwMCIsImV4cCI6MTc3MDMxNjQ5Mywicm9sZXMiOlsiQVVUSEVOVElDQVRFRF9VU0VSIiwiUkVBREVSIiwiRURJVE9SIiwiQURNSU4iLCJPUkdBTklaQVRJT05fTUVNQkVSIiwiT1JHQU5JWkFUSU9OX1JFQURFUiIsIk9SR0FOSVpBVElPTl9SVU5ORVIiLCJPUkdBTklaQVRJT05fRURJVE9SIiwiT1JHQU5JWkFUSU9OX0FETUlOIiwiV09SS1NQQUNFX1JFQURFUiIsIldPUktTUEFDRV9SVU5ORVIiLCJXT1JLU1BBQ0VfRURJVE9SIiwiV09SS1NQQUNFX0FETUlOIiwiREFUQVBMQU5FIl19.H1Kaqt5suZO8CrAk4OQbCjEUPxDUr48u2ds2N632QpM",
+            "AIRBYTE_WORKSPACE_ID": "4a36b1d6-4886-4420-a5f1-0fb463d077ab",  # Replace with your workspace id
+        },
+        mounts=[
+            Mount(
+                source="/Users/axelfurlan/.config/gcloud/application_default_credentials.json",
+                target="/secrets/gcp_credentials.json",
+                type="bind",
+                read_only=True,
+            ),
+        ],
+    )
+
     dbt_execution = DockerOperator(
         task_id="run_dbt_bigquery",
         image="dbt-bigquery:latest",
@@ -58,7 +83,7 @@ with DAG(
         },
         mounts=[
             Mount(
-                source="/Users/iobruno/.gcp/gcp_credentials.json",
+                source="/Users/axelfurlan/.config/gcloud/application_default_credentials.json",
                 target="/secrets/gcp_credentials.json",
                 type="bind",
                 read_only=True,
@@ -74,5 +99,6 @@ with DAG(
 
     (
         [hackernews_rss_front, hackernews_rss_newest, hackernews_rss_comments]
+        >> airbyte_lineage_export
         >> dbt_execution
     )

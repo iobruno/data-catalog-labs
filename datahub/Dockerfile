@@ -5,6 +5,7 @@ WORKDIR /datahub
 
 COPY uv.lock pyproject.toml README.md ./
 COPY recipes /datahub/recipes
+COPY connectors /datahub/connectors
 
 RUN --mount=type=cache,target=/root/.cache/uv \
     UV_COMPILE_BYTECODE=1 \
