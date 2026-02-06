@@ -1,7 +1,7 @@
 import argparse
 
 from airbyte_datahub.config import load_config
-from airbyte_datahub.emitter import emit_all
+from airbyte_datahub.emitter import process
 
 
 def main():
@@ -10,7 +10,7 @@ def main():
     args = parser.parse_args()
 
     config = load_config(args.config)
-    emit_all(config)
+    process(config)
 
 
 if __name__ == "__main__":
