@@ -27,10 +27,10 @@ class AirbyteSourceConfig(ConfigModel):
     """Configuration for Airbyte source connector."""
 
     server_url: str
+    workspace_id: str
     username: Optional[str] = None
     password: Optional[str] = None
     api_token: Optional[str] = None
-    workspace_id: Optional[str] = None
     platform_instance: str = "airbyte"
     ingest_connections: bool = True
     ingest_sources: bool = True
@@ -130,13 +130,6 @@ class AirbyteSource(Source):
 
         # Use configured workspace_id or first workspace
         workspace_id = self.config.workspace_id
-        if not workspace_id and workspaces:
-            workspace_id = workspaces[0].get("workspaceId")
-            logger.info(f"Using workspace: {workspace_id}")
-
-        if not workspace_id:
-            logger.error("No workspace ID available")
-            return
 
         # Ingest sources
         if self.config.ingest_sources:
