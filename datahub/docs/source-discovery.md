@@ -37,101 +37,11 @@ source_registry.register_from_entrypoint("datahub.ingestion.source.plugins")
 
 The `register_from_entrypoint()` method tells the registry to discover all entry points in the specified group.
 
-### 3. Discovery Mechanism
-
-The registry uses Python's `importlib.metadata.entry_points()` to discover all packages that have registered entry points:
-
-```python
-def _load_entrypoint(self, entry_point_key: str) -> None:
-    for entry_point in entry_points(group=entry_point_key):
-        self.register_lazy(entry_point.name, entry_point.value)
-```
-
-**What happens:**
-1. Python's packaging system (setuptools) reads `pyproject.toml` during package installation
-2. Entry points are registered in the package's metadata
-3. `entry_points()` scans all installed packages for the specified group
-4. Each discovered entry point is registered **lazily** (as a string path, not imported yet)
-
-### 4. Lazy Loading
-
-The registry stores entry points as import paths (strings) rather than importing the classes immediately:
-
-```python
-def register_lazy(self, key: str, import_path: str) -> None:
-    self._register(key, import_path)  # Stores "connectors.airbyte_source:AirbyteSource"
-```
-
-**Benefits:**
-- Faster startup time (classes aren't imported until needed)
-- Better error handling (import errors only occur when the source is actually used)
-- Reduced memory footprint
-
-### 5. Materialization (Class Import)
-
-When a recipe uses the source (e.g., `type: airbyte`), DataHub materializes the entry point:
-
-```python
-def get(self, key: str) -> Type[T]:
-    self._materialize_entrypoints()  # Loads all lazy entry points
-    # ... then looks up "airbyte" and imports the class
-```
-
 The materialization process:
 1. Discovers all entry points in the registered groups
 2. For the requested source, imports the class using the stored import path
 3. Validates the class (ensures it's a subclass of `Source`)
 4. Replaces the string path with the actual class in the registry
-
-## Complete Flow Diagram
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│ 1. Package Installation                                      │
-│    pyproject.toml → setuptools → entry point metadata        │
-└───────────────────────┬─────────────────────────────────────┘
-                        │
-                        ▼
-┌─────────────────────────────────────────────────────────────┐
-│ 2. DataHub Startup                                          │
-│    source_registry.register_from_entrypoint()                │
-│    → Registers entry point group for discovery              │
-└───────────────────────┬─────────────────────────────────────┘
-                        │
-                        ▼
-┌─────────────────────────────────────────────────────────────┐
-│ 3. Recipe Parsing                                           │
-│    Recipe contains: type: airbyte                           │
-└───────────────────────┬─────────────────────────────────────┘
-                        │
-                        ▼
-┌─────────────────────────────────────────────────────────────┐
-│ 4. Source Lookup                                            │
-│    source_registry.get("airbyte")                            │
-│    → Triggers materialization                                │
-└───────────────────────┬─────────────────────────────────────┘
-                        │
-                        ▼
-┌─────────────────────────────────────────────────────────────┐
-│ 5. Entry Point Discovery                                    │
-│    entry_points(group="datahub.ingestion.source.plugins")   │
-│    → Finds "airbyte" = "connectors.airbyte_source:..."      │
-└───────────────────────┬─────────────────────────────────────┘
-                        │
-                        ▼
-┌─────────────────────────────────────────────────────────────┐
-│ 6. Class Import                                             │
-│    import_path("connectors.airbyte_source:AirbyteSource")    │
-│    → Imports AirbyteSource class                            │
-└───────────────────────┬─────────────────────────────────────┘
-                        │
-                        ▼
-┌─────────────────────────────────────────────────────────────┐
-│ 7. Source Instantiation                                     │
-│    AirbyteSource.create(config_dict, ctx)                    │
-│    → Creates and returns source instance                    │
-└─────────────────────────────────────────────────────────────┘
-```
 
 ## Requirements for Custom Sources
 
@@ -201,42 +111,3 @@ uv sync
 # Docker build
 docker build -t datahub-ingest:latest .
 ```
-
-## Benefits of Entry Point System
-
-1. **No Manual Registration**: No need to modify DataHub's core code
-2. **Automatic Discovery**: All installed packages with entry points are automatically found
-3. **Lazy Loading**: Classes are only imported when actually used
-4. **Standard Mechanism**: Uses Python's standard PEP 621 entry points
-5. **Isolation**: Custom sources are isolated from DataHub's core codebase
-
-## Troubleshooting
-
-### Source Not Found
-
-If DataHub can't find your source:
-
-1. **Check entry point format**: Ensure it's in `pyproject.toml` under the correct group
-2. **Verify package installation**: The package must be installed for entry points to be registered
-3. **Check import path**: The module path must be correct and importable
-4. **Inspect registry**: Use Python to check if entry points are discovered:
-   ```python
-   from importlib.metadata import entry_points
-   eps = entry_points(group="datahub.ingestion.source.plugins")
-   print(list(eps))
-   ```
-
-### Import Errors
-
-If you get import errors:
-
-1. **Check module path**: Ensure the module is in Python's path
-2. **Verify class name**: The class name after the colon must exist
-3. **Check dependencies**: All dependencies must be installed
-4. **Docker context**: In Docker, ensure the module is copied into the image
-
-## References
-
-- [PEP 621 - Project metadata](https://peps.python.org/pep-0621/)
-- [Python Entry Points](https://packaging.python.org/en/latest/guides/creating-and-discovering-plugins/)
-- [DataHub Source API](https://datahubproject.io/docs/metadata-ingestion/sources/)
