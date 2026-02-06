@@ -6,7 +6,6 @@ Ingests Airbyte connections, sources, destinations, and jobs into DataHub.
 import logging
 from typing import Dict, Iterable, List, Optional
 import requests
-from requests.auth import HTTPBasicAuth
 
 from datahub.configuration.common import ConfigModel
 from datahub.ingestion.api.common import PipelineContext
@@ -14,18 +13,10 @@ from datahub.ingestion.api.source import Source, SourceReport
 from datahub.ingestion.api.workunit import MetadataWorkUnit
 from datahub.metadata.com.linkedin.pegasus2avro.mxe import MetadataChangeEvent
 from datahub.metadata.schema_classes import (
-    DatasetSnapshotClass,
-    DatasetPropertiesClass,
     DataFlowSnapshotClass,
     DataFlowInfoClass,
-    DataJobSnapshotClass,
-    DataJobInfoClass,
-    DataJobInputOutputClass,
     DataPlatformInfoClass,
     PlatformTypeClass,
-    OwnershipClass,
-    OwnershipTypeClass,
-    OwnerClass,
 )
 from datahub.emitter.mcp import MetadataChangeProposalWrapper
 
