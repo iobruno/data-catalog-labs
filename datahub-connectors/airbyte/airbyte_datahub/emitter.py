@@ -28,9 +28,14 @@ def build_datajob(config: PipelineConfig, conn: ConnectionConfig, flow: DataFlow
 
 def emit_all(config: PipelineConfig, flow: DataFlow, jobs: list[DataJob]) -> None:
     emitter = DataHubRestEmitter(gms_server=config.datahub.server)
-    all_mcps = list(flow.generate_mcp()) + [mcp for job in jobs for mcp in job.generate_mcp()]
+
+    flow_mcp = list(flow.generate_mcp())
+    jobs_mcp = [mcp for job in jobs for mcp in job.generate_mcp()]
+    all_mcps = flow_mcp + jobs_mcp
+
     for mcp in all_mcps:
         emitter.emit(mcp)
+
     print(f"Emitted {len(all_mcps)} MCPs to {config.datahub.server}")
 
 
