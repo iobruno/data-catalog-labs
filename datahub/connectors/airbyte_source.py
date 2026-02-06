@@ -131,44 +131,12 @@ class AirbyteSource(Source):
         # Use configured workspace_id or first workspace
         workspace_id = self.config.workspace_id
 
-        # Ingest sources
-        if self.config.ingest_sources:
-            sources = self.get_sources(workspace_id)
-            for source in sources:
-                yield self.create_source_workunit(source)
-                self.report.report_workunit(self.create_source_workunit(source))
-
-        # Ingest destinations
-        if self.config.ingest_destinations:
-            destinations = self.get_destinations(workspace_id)
-            for destination in destinations:
-                yield self.create_destination_workunit(destination)
-                self.report.report_workunit(
-                    self.create_destination_workunit(destination)
-                )
-
         # Ingest connections
         if self.config.ingest_connections:
             connections = self.get_connections(workspace_id)
             for connection in connections:
                 yield self.create_connection_workunit(connection)
                 self.report.report_workunit(self.create_connection_workunit(connection))
-
-                # Ingest jobs for each connection
-                if self.config.ingest_jobs:
-                    connection_id = connection.get("connectionId")
-                    jobs = self.get_jobs(connection_id)
-                    for job in jobs:
-                        try:
-                            job_wu = self.create_job_workunit(job, connection_id)
-                            yield job_wu
-                            self.report.report_workunit(job_wu)
-                        except Exception as e:
-                            logger.warning(
-                                f"Failed to create job workunit for job {job.get('jobId')}: {e}"
-                            )
-                            # Continue with other jobs even if one fails
-                            continue
 
         logger.info("Completed Airbyte ingestion")
 
