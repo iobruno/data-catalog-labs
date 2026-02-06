@@ -1,44 +1,35 @@
-from dataclasses import dataclass, field
 from pathlib import Path
 
 import yaml
+from pydantic import BaseModel
 
 
-@dataclass
-class WorkspaceConfig:
+class WorkspaceConfig(BaseModel):
     id: str
     name: str
     base_url: str
 
 
-@dataclass
-class DataHubConfig:
+class DataHubConfig(BaseModel):
     server: str
 
 
-@dataclass
-class ConnectionConfig:
+class ConnectionConfig(BaseModel):
     id: str
     name: str
     upstream_datajob: str
     downstream_dataset: str
 
 
-@dataclass
-class PipelineConfig:
+class PipelineConfig(BaseModel):
     workspace: WorkspaceConfig
     environment: str
     datahub: DataHubConfig
-    connections: list[ConnectionConfig] = field(default_factory=list)
+    connections: list[ConnectionConfig] = []
 
 
 def load_config(path: str | Path) -> PipelineConfig:
     with open(path) as f:
         raw = yaml.safe_load(f)
 
-    return PipelineConfig(
-        workspace=WorkspaceConfig(**raw["workspace"]),
-        environment=raw["environment"],
-        datahub=DataHubConfig(**raw["datahub"]),
-        connections=[ConnectionConfig(**c) for c in raw.get("connections", [])],
-    )
+    return PipelineConfig.model_validate(raw)
