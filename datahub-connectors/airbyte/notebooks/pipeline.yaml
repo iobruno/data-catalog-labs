@@ -13,8 +13,3 @@ connections:
     name: "hackernews_rss_front"
     upstream_datajob: "urn:li:dataJob:(urn:li:dataFlow:(airflow,hackernews_rss_bigquery,prod),hackernews_rss_front)"
     downstream_dataset: "urn:li:dataset:(urn:li:dataPlatform:bigquery,iobruno-gcp-labs.hackernews_rss_raw.frontpage_items,PROD)"
-
-  - id: "4ca6f367-93f7-4f88-b0fc-b765daf09a28"
-    name: "hackernews_rss_newest"
-    upstream_datajob: "urn:li:dataJob:(urn:li:dataFlow:(airflow,hackernews_rss_bigquery,prod),hackernews_rss_newest)"
-    downstream_dataset: "urn:li:dataset:(urn:li:dataPlatform:bigquery,iobruno-gcp-labs.hackernews_rss_raw.newest_items,PROD)"
