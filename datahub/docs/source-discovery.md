@@ -136,7 +136,9 @@ class AirbyteSource(Source):
         All imported from: from datahub.metadata.schema_classes
         """
         # Generate and yield metadata workunits
-        yield self.get_example_workunit()
+        workunit = self.get_example_workunit()
+        yield workunit
+        self.report.report_workunit(workunit) # add workunit to the report to show on datahub's ingestion UI
     
     def get_report(self) -> SourceReport:
         """This can be left as is, the report attr is going to be ingested data in the get_workunits() function.
