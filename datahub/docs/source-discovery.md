@@ -4,7 +4,7 @@ This document explains how DataHub discovers and loads custom source connectors 
 
 ## Overview
 
-DataHub uses Python's **entry point** mechanism (PEP 621) to automatically discover custom source connectors. This allows you to create custom connectors without modifying DataHub's core codebase.
+DataHub uses Python's **entry point** mechanism to automatically discover custom source connectors. This allows you to create custom connectors without modifying DataHub's core codebase.
 
 ## How It Works
 
@@ -53,61 +53,99 @@ Add to `pyproject.toml`:
 
 ```toml
 [project.entry-points."datahub.ingestion.source.plugins"]
-your_source_name = "your.module.path:YourSourceClass"
+airbyte = "connectors.airbyte_source:AirbyteSource"
 ```
+
+**Note:** The entry point name (e.g., `airbyte`) is what you use in your recipe YAML file as `type: airbyte`. The import path points to your source class.
 
 ### 2. Source Class Implementation
 
-Your source class must:
+Use this as an example to follow:
 
-- Inherit from `datahub.ingestion.api.source.Source`
-- Implement the required methods:
-  - `get_workunits()` - Generate metadata work units
-  - `get_report()` - Return ingestion report
-  - `close()` - Clean up resources
-- Have a `create()` class method (factory method)
-- Use `ConfigModel` for configuration
-
-Example:
+Example (from `connectors/airbyte_source.py`):
 
 ```python
 from datahub.ingestion.api.source import Source, SourceReport
 from datahub.ingestion.api.common import PipelineContext
 from datahub.configuration.common import ConfigModel
+from typing import Dict, Iterable, Optional
+from datahub.ingestion.api.workunit import MetadataWorkUnit
 
-class YourSourceConfig(ConfigModel):
+class AirbyteSourceConfig(ConfigModel):
     server_url: str
+    workspace_id: str
+    api_token: Optional[str] = None
 
-class YourSource(Source):
-    def __init__(self, config: YourSourceConfig, ctx: PipelineContext):
+class AirbyteSource(Source):
+    """Inherits from Source, this is mandatory for Datahub to register it"""
+    def __init__(self, config: AirbyteSourceConfig, ctx: PipelineContext):
         super().__init__(ctx)
         self.config = config
         self.report = SourceReport()
     
     @classmethod
-    def create(cls, config_dict: Dict, ctx: PipelineContext) -> "YourSource":
-        config = YourSourceConfig.parse_obj(config_dict)
+    def create(cls, config_dict: Dict, ctx: PipelineContext) -> "AirbyteSource":
+        config = AirbyteSourceConfig.model_validate(config_dict)
         return cls(config, ctx)
+
+    def get_data(self):
+        """Call an API to get whatever data you want."""
+        raise NotImplementedError
+    
+    def get_example_workunit(self) -> MetadataWorkUnit:
+        """Constructs the actual workunit, what datahub wants. You can either generate an MCE or MCP for this.
+        MCP = MetadataChangeProposalWrapper
+        MCE = MetadataChangeEvent
+        """
+        data = self.get_data()
+        sanitized_name = data.name.replace(" ", "_").replace("/", "_").replace("\\", "_")
+
+        example_urn = f"urn:li:dataFlow:(airbyte,{sanitized_name},airbyte)"
+        flow_snapshot = DataFlowSnapshotClass(
+            urn=flow_urn,
+            aspects=[ # This is the dataflow's metadata.
+                DataFlowInfoClass(
+                    name=data.connection_name,
+                    description=f"Airbyte connection: {data.connection_name}",
+                    customProperties={ # get whatever metadata you want from your data object.
+                        "connection_id": data.connection_id,
+                        "source_id": data.source_id,
+                        "destination_id": data.destination_id,
+                        "status": data.status,
+                    },
+                )
+            ],
+        )
+        
+        mce = MetadataChangeEvent(proposedSnapshot=flow_snapshot)
+        return MetadataWorkUnit(id=f"airbyte-connection-{data.connection_id}", mce=mce)
+
     
     def get_workunits(self) -> Iterable[MetadataWorkUnit]:
-        # Your implementation
-        pass
+        """
+        Main method to generate workunits for Datahub. It generates the actual work units for datahub.
+        In here you'd GET the resources from diff endpoints from your actual source,
+        and then generate workunits via the MetadataWorkUnit class.
+
+        Each actual definition of a work unit may come from diff schema_classes like these:
+           DataFlowSnapshotClass,
+           DataFlowInfoClass,
+           DataPlatformInfoClass,
+           PlatformTypeClass.
+
+        All imported from: from datahub.metadata.schema_classes
+        """
+        # Generate and yield metadata workunits
+        yield self.get_example_workunit()
     
     def get_report(self) -> SourceReport:
+        """This can be left as is, the report attr is going to be ingested data in the get_workunits() function.
+        When running, it runs self.report.report_workunit(workunit) to add the workunit to the report.
+        It can also run self.report.report_failure(...) to report a particular ingestion failure.
+        """
         return self.report
     
     def close(self):
+        """Add this is you want to close a particular session like requests.Session()"""
         pass
-```
-
-### 3. Package Installation
-
-The package must be installed (or built into a Docker image) so that setuptools can register the entry points:
-
-```bash
-# Local development
-uv sync
-
-# Docker build
-docker build -t datahub-ingest:latest .
 ```

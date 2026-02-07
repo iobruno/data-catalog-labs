@@ -85,8 +85,13 @@ class AirbyteSource(Source):
         source_id = connection.get("sourceId")
         destination_id = connection.get("destinationId")
 
+        # Sanitize connection name for URN (replace special characters)
+        sanitized_name = (
+            connection_name.replace(" ", "_").replace("/", "_").replace("\\", "_")
+        )
+
         # Create DataFlow (represents the connection)
-        flow_urn = f"urn:li:dataFlow:(airbyte,{connection_name},{self.config.platform_instance})"
+        flow_urn = f"urn:li:dataFlow:(airbyte,{sanitized_name},{self.config.platform_instance})"
         flow_snapshot = DataFlowSnapshotClass(
             urn=flow_urn,
             aspects=[
@@ -130,15 +135,18 @@ class AirbyteSource(Source):
 
         # Use configured workspace_id or first workspace
         workspace_id = self.config.workspace_id
+        logger.info(f"Using workspace_id: {workspace_id}")
 
         # Ingest connections
         if self.config.ingest_connections:
             connections = self.get_connections(workspace_id)
+            logger.info(f"Found {len(connections)} connections to ingest")
             for connection in connections:
-                yield self.create_connection_workunit(connection)
-                self.report.report_workunit(self.create_connection_workunit(connection))
+                workunit = self.create_connection_workunit(connection)
+                yield workunit
+                self.report.report_workunit(workunit)
 
-        logger.info("Completed Airbyte ingestion")
+        logger.info(f"Completed Airbyte ingestion. Report: {self.report}")
 
     @classmethod
     def create(cls, config_dict: Dict, ctx: PipelineContext) -> "AirbyteSource":
