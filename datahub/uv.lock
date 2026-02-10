@@ -9,7 +9,7 @@ resolution-markers = [
 
 [[package]]
 name = "acryl-datahub"
-version = "1.3.1.10"
+version = "1.4.0.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiohttp" },
@@ -33,18 +33,20 @@ dependencies = [
     { name = "pydantic" },
     { name = "pydantic-core" },
     { name = "python-dateutil" },
+    { name = "python-json-logger" },
     { name = "pyyaml" },
     { name = "requests-file" },
     { name = "ruamel-yaml" },
     { name = "sentry-sdk" },
+    { name = "setuptools" },
     { name = "tabulate" },
     { name = "toml" },
     { name = "typing-extensions" },
     { name = "typing-inspect" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/b4/a9/471addf6ffe28d57469d09cd6ffa275f7d99e699f2260813826f193125e0/acryl_datahub-1.3.1.10.tar.gz", hash = "sha256:39e9275ea4b654e155f2e595ec4072608df62dcd67bc49a4659e9b2c2abc0e0c", size = 2423098, upload-time = "2026-01-30T17:05:30.929Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/ae/e9/ba1d5d7dc2e533714f289e66a6a09948ded88c404a54cdef46a7ead4f280/acryl_datahub-1.4.0.2.tar.gz", hash = "sha256:c9a1f8a3ac42714dc4b6b206bb8970655faed8cb87c2c6cc014ac44f261292c3", size = 2469741, upload-time = "2026-02-09T07:20:30.008Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/48/2e/8f02233ce654d010c7a80c2a5f4354a2d90f72e8467fbb4c5698c4811c4b/acryl_datahub-1.3.1.10-py3-none-any.whl", hash = "sha256:af3037d4e493b461e02085f01b10cab554839b0b62b84298d38a7fd0474fb452", size = 2957727, upload-time = "2026-01-30T17:05:20.529Z" },
+    { url = "https://files.pythonhosted.org/packages/47/d1/472d43d4767a341aca73e3eb258fc7c2d0d76de29c5d1c8a3ea08373036a/acryl_datahub-1.4.0.2-py3-none-any.whl", hash = "sha256:cc7e442a117c8116a8456703b4c5d90dc67f86ead7a513823ce8c40fae8b8741", size = 3007399, upload-time = "2026-02-09T07:20:21.076Z" },
 ]
 
 [package.optional-dependencies]
@@ -726,7 +728,7 @@ dependencies = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "acryl-datahub", extras = ["bigquery", "datahub-kafka"], specifier = ">=1.3.1,<2.0" }]
+requires-dist = [{ name = "acryl-datahub", extras = ["bigquery", "datahub-kafka"], specifier = "==1.4.0.2" }]
 
 [[package]]
 name = "debugpy"
