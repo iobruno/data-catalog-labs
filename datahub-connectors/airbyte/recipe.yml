@@ -1,0 +1,13 @@
+source:
+  type: "datahub_airbyte.source.AirbyteConnectionSource"
+  config:
+    airflow_dag: ${AIRFLOW_DAG_NAME}
+    airflow_task: ${AIRFLOW_TASK_NAME}
+    bigquery_table: ${BIGQUERY_TABLE_FQN}
+    airbyte_connection_id: ${AIRBYTE_CONNECTION_ID}
+    environment: "prod"
+
+sink:
+  type: "datahub-rest"
+  config:
+    server: "http://localhost:9090"
