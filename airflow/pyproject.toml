@@ -10,7 +10,7 @@ dependencies = [
     "sqlalchemy>=1.4.54,<2.0",                          # Airflow doesn't yet support SQLAlchemy 2.x
     "psycopg2-binary==2.9.11",                          # psycopg3 is only supported by SQLAlchemy 2.0+
 
-    "apache-airflow-providers-airbyte==3.9.0",          # Airbyte operator
+    "apache-airflow-providers-airbyte==5.2.5",          # Airbyte operator
     "apache-airflow-providers-docker>=4.4.5,<4.5",      # Docker operator for running containers
     "acryl-datahub-airflow-plugin[airflow2]==1.3.0",    # DataHub extension for OpenLineage (match Server version)
 ]

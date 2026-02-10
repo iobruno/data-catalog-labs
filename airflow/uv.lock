@@ -177,6 +177,31 @@ wheels = [
 ]
 
 [[package]]
+name = "airbyte-api"
+version = "0.53.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "certifi" },
+    { name = "charset-normalizer" },
+    { name = "dataclasses-json" },
+    { name = "idna" },
+    { name = "jsonpath-python" },
+    { name = "marshmallow" },
+    { name = "mypy-extensions" },
+    { name = "packaging" },
+    { name = "python-dateutil" },
+    { name = "requests" },
+    { name = "six" },
+    { name = "typing-extensions" },
+    { name = "typing-inspect" },
+    { name = "urllib3" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/ad/23/8debf9c4ca8652c9ceb60b8074e654191ba2053001616151993b39d6cdcb/airbyte-api-0.53.0.tar.gz", hash = "sha256:f054ed170f9a691c3304e93a5212670fd2a38e5debb667c72d5ef8eb89cf7e9d", size = 330090, upload-time = "2025-10-02T19:55:43.378Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/7a/f5/ca44b6f3919f049a4441755958c042fcea09a44e876352a6005f5e5a9e46/airbyte_api-0.53.0-py3-none-any.whl", hash = "sha256:0bd86d5122789a7c97115a4b52ce492b013d0ea8eeab597b6495b0b310332f28", size = 773825, upload-time = "2025-10-02T19:55:42.043Z" },
+]
+
+[[package]]
 name = "airflow-data-catalog"
 version = "1.0"
 source = { virtual = "." }
@@ -205,7 +230,7 @@ dev = [
 requires-dist = [
     { name = "acryl-datahub-airflow-plugin", extras = ["airflow2"], specifier = "==1.3.0" },
     { name = "apache-airflow", specifier = ">=2.10.5,<2.11" },
-    { name = "apache-airflow-providers-airbyte", specifier = "==3.9.0" },
+    { name = "apache-airflow-providers-airbyte", specifier = "==5.2.5" },
     { name = "apache-airflow-providers-celery", marker = "extra == 'celery'", specifier = ">=3.10.0,<4.0" },
     { name = "apache-airflow-providers-docker", specifier = ">=4.4.5,<4.5" },
     { name = "apache-airflow-providers-redis", marker = "extra == 'celery'", specifier = ">=3.8.0,<4.0" },
@@ -349,15 +374,17 @@ wheels = [
 
 [[package]]
 name = "apache-airflow-providers-airbyte"
-version = "3.9.0"
+version = "5.2.5"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
+    { name = "airbyte-api" },
     { name = "apache-airflow" },
-    { name = "apache-airflow-providers-http" },
+    { name = "apache-airflow-providers-common-compat" },
+    { name = "requests" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/8f/df/b9ff7986ac5acc16c2fd5c3dd1eb7e07500bede86ae55ab9bae16eef57bb/apache_airflow_providers_airbyte-3.9.0.tar.gz", hash = "sha256:deb7164eca998b21f0d0ef2c102ad442ea1dcd41bfba89e135a8c81996bbf3fe", size = 13719, upload-time = "2024-08-22T10:34:50.889Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/39/b3/fc804af786bd21f80476871e044bec9f344b915b50cdb6db3262a9108b87/apache_airflow_providers_airbyte-5.2.5.tar.gz", hash = "sha256:faf85cb419bb59cfa65aaf89f61aafb1122c4bead5adb6240e0e603c0fc0bb25", size = 34908, upload-time = "2025-11-17T19:10:08.257Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/15/27/3a33abed73f8dc4373c299b672a5447dc05398bafe140d2ca5b935f4a61a/apache_airflow_providers_airbyte-3.9.0-py3-none-any.whl", hash = "sha256:e30be1af8de86ecc56d85f673d3addf2400a3dd089c8bb4faf07295a1b94f9a6", size = 22310, upload-time = "2024-08-22T10:32:48.722Z" },
+    { url = "https://files.pythonhosted.org/packages/5a/7d/471fcf92fe506f1a173f9a7c7ab6bcfddc0d3695db9da1d871d0ec59666c/apache_airflow_providers_airbyte-5.2.5-py3-none-any.whl", hash = "sha256:3c5e743f25d953a9b0b6a998291a8eaa6af36800a7046564b57ec7565b088cd1", size = 22449, upload-time = "2025-11-17T19:08:06.955Z" },
 ]
 
 [[package]]
@@ -1057,6 +1084,19 @@ wheels = [
 ]
 
 [[package]]
+name = "dataclasses-json"
+version = "0.6.7"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "marshmallow" },
+    { name = "typing-inspect" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/64/a4/f71d9cf3a5ac257c993b5ca3f93df5f7fb395c725e7f1e6479d2514173c3/dataclasses_json-0.6.7.tar.gz", hash = "sha256:b6b3e528266ea45b9535223bc53ca645f5208833c29229e847b3f26a1cc55fc0", size = 32227, upload-time = "2024-06-09T16:20:19.103Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c3/be/d0d44e092656fe7a06b55e6103cbce807cdbdee17884a5367c68c9860853/dataclasses_json-0.6.7-py3-none-any.whl", hash = "sha256:0dbf33f26c8d5305befd61b39d2b3414e8a407bedc2834dea9b8d642666fb40a", size = 28686, upload-time = "2024-06-09T16:20:16.715Z" },
+]
+
+[[package]]
 name = "debugpy"
 version = "1.8.19"
 source = { registry = "https://pypi.org/simple" }
@@ -1699,6 +1739,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/77/e8/a3f261a66e4663f22700bc8a17c08cb83e91fbf086726e7a228398968981/json5-0.13.0.tar.gz", hash = "sha256:b1edf8d487721c0bf64d83c28e91280781f6e21f4a797d3261c7c828d4c165bf", size = 52441, upload-time = "2026-01-01T19:42:14.99Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/d7/9e/038522f50ceb7e74f1f991bf1b699f24b0c2bbe7c390dd36ad69f4582258/json5-0.13.0-py3-none-any.whl", hash = "sha256:9a08e1dd65f6a4d4c6fa82d216cf2477349ec2346a38fd70cc11d2557499fbcc", size = 36163, upload-time = "2026-01-01T19:42:13.962Z" },
+]
+
+[[package]]
+name = "jsonpath-python"
+version = "1.1.4"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/b8/bf/626a72f2d093c5eb4f4de55b443714afa7231beeae40d4a1c69b5c5aa4d1/jsonpath_python-1.1.4.tar.gz", hash = "sha256:bb3e13854e4807c078a1503ae2d87c211b8bff4d9b40b6455ed583b3b50a7fdd", size = 84766, upload-time = "2025-11-25T12:08:39.521Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ee/bc/52e5bf0d9839e082b976c19afcab7561d0d719c7627483bf5dc251d27eed/jsonpath_python-1.1.4-py3-none-any.whl", hash = "sha256:8700cb8610c44da6e5e9bff50232779c44bf7dc5bc62662d49319ee746898442", size = 12687, upload-time = "2025-11-25T12:08:38.453Z" },
 ]
 
 [[package]]
