@@ -1,19 +1,19 @@
-x-datahub-gms-image: &datahub-gms-image acryldata/datahub-gms:${DATAHUB_VERSION:-v1.3.0.1}
-x-datahub-actions-image: &datahub-actions-image acryldata/datahub-actions:${DATAHUB_VERSION:-v1.3.0.1}-slim
-x-datahub-webui-image: &datahub-webui-image acryldata/datahub-frontend-react:${DATAHUB_VERSION:-v1.3.0.1}
-x-datahub-upgrade-image: &datahub-upgrade-image acryldata/datahub-upgrade:${DATAHUB_VERSION:-v1.3.0.1}
+x-datahub-gms-image: &datahub-gms-image acryldata/datahub-gms:${DATAHUB_VERSION:-v1.4.0.2}
+x-datahub-actions-image: &datahub-actions-image acryldata/datahub-actions:${DATAHUB_VERSION:-v1.4.0.2}-slim-alpine
+x-datahub-webui-image: &datahub-webui-image acryldata/datahub-frontend-react:${DATAHUB_VERSION:-v1.4.0.2}
+x-datahub-upgrade-image: &datahub-upgrade-image acryldata/datahub-upgrade:${DATAHUB_VERSION:-v1.4.0.2}
 
-x-datahub-es-init-image: &datahub-es-init-image acryldata/datahub-elasticsearch-setup:${DATAHUB_VERSION:-v1.3.0.1}
-x-datahub-postgres-init-image: &datahub-postgres-init-image acryldata/datahub-postgres-setup:${DATAHUB_VERSION:-v1.3.0.1}
+x-datahub-elasticseach-init-image: &datahub-elasticseach-init-image acryldata/datahub-elasticsearch-setup:${DATAHUB_VERSION:-v1.4.0.2}
+x-datahub-postgres-init-image: &datahub-postgres-init-image acryldata/datahub-postgres-setup:${DATAHUB_VERSION:-v1.4.0.2}
 x-datahub-kafka-init-image: &datahub-kafka-init-image acryldata/datahub-kafka-setup:${DATAHUB_VERSION:-v1.2.0.1}
 
-x-elasticsearch-image: &elasticsearch-image elasticsearch:${DATAHUB_SEARCH_TAG:-7.10.1}
+x-elasticsearch-image: &elasticsearch-image elasticsearch:${DATAHUB_SEARCH_TAG:-8.19.11}
 x-postgres-image: &postgres-image postgres:${POSTGRES_VERSION:-18.1-alpine}
-x-cp-kafka-image: &cp-kafka-image confluentinc/cp-kafka:${CONFLUENT_PLATFORM_VERSION:-8.0.3}
-x-cp-schema-registry-image: &cp-schema-registry-image confluentinc/cp-schema-registry:${CONFLUENT_PLATFORM_VERSION:-8.0.3}
+x-cp-kafka-image: &cp-kafka-image confluentinc/cp-kafka:${CONFLUENT_PLATFORM_VERSION:-8.1.1}
+x-cp-schema-registry-image: &cp-schema-registry-image confluentinc/cp-schema-registry:${CONFLUENT_PLATFORM_VERSION:-8.1.1}
 
-x-conduktor-console: &conduktor-console-image conduktor/conduktor-console:${CONDUKTOR_PLATFORM_VERSION:-1.41.0}
-x-conduktor-cortex: &conduktor-cortex-image conduktor/conduktor-console-cortex:${CONDUKTOR_PLATFORM_VERSION:-1.41.0}
+x-conduktor-console: &conduktor-console-image conduktor/conduktor-console:${CONDUKTOR_PLATFORM_VERSION:-1.42.0}
+x-conduktor-cortex: &conduktor-cortex-image conduktor/conduktor-console-cortex:${CONDUKTOR_PLATFORM_VERSION:-1.42.0}
 
 x-kafka-common:
   &kafka-common
@@ -29,7 +29,7 @@ x-kafka-common:
     KAFKA_DELETE_TOPIC_ENABLE: true
     KAFKA_JMX_PORT: 9999
   healthcheck:
-    test: ["CMD-SHELL", "cub kafka-ready -b localhost:29092 1 10 || exit 1"]
+    test: ["CMD-SHELL", "kafka-broker-api-versions --bootstrap-server localhost:29092 || exit 1"]
     start_period: 10s
     interval: 5s
     timeout: 10s
@@ -75,7 +75,7 @@ services:
       broker0:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "cub sr-ready localhost 8081 30 || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:8081/subjects || exit 1"]
       start_period: 10s
       interval: 5s
       timeout: 10s
@@ -256,7 +256,7 @@ services:
       datahub_setup_job: true
 
   elasticsearch-init:
-    image: *datahub-es-init-image
+    image: *datahub-elasticseach-init-image
     container_name: elasticsearch-init
     hostname: elasticsearch-init
     environment:
