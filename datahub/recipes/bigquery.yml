@@ -1,0 +1,33 @@
+source:
+  type: bigquery
+  config:
+
+    project_ids:
+      - iobruno-gcp-labs
+
+    dataset_pattern:
+      allow:
+        - "hackernews_rss_raw"    # Raw data from Airbyte
+        - "stg_hackernews_rss"    # Staging views
+        - "hackernews_rss"        # Core/analytics tables
+
+    include_tables: true
+    include_views: true
+    include_table_lineage: true
+    include_view_lineage: true
+    include_view_column_lineage: true
+
+    profiling:
+      enabled: false  # disabled by default as it can be resource intensive
+
+sink:
+  type: "datahub-kafka"
+  config:
+    connection:
+     bootstrap: "host.docker.internal:9093"
+     schema_registry_url: "http://host.docker.internal:8081"
+
+  # Alternatively, you can use DataHub REST Server
+  # type: datahub-rest
+  # config:
+  #   server: "http://host.docker.internal:9090"

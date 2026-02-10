@@ -7,15 +7,7 @@ requires-python = ">=3.11,<3.12"
 
 dependencies = [
     "acryl-datahub[bigquery,datahub-kafka]>=1.3.1,<2.0",
-    "requests>=2.31.0",
 ]
-
-[project.entry-points."datahub.ingestion.source.plugins"]
-airbyte = "connectors.airbyte_source:AirbyteSource"
-
-[tool.setuptools]
-# Only include connectors as a package, exclude recipes (YAML files)
-packages = ["connectors"]
 
 [tool.ruff]
 line-length = 100
