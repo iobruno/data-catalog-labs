@@ -26,7 +26,29 @@ Alternatively you can run it with the **CeleryExecutor** with:
 docker compose -f compose.celery.yaml up --build -d
 ```
 
-**2.** Setup an Airflow Connections to Airbyte:
+**2.** Setup a Connection to DataHub:
+```txt
+Connection Id: datahub_rest_default
+Connection Type: DataHub REST Server
+Server Endpoint: http://host.docker.internal:9090
+Password: <blank>
+```
+
+**3.** Setup an Airflow Connections to Airbyte:
+
+3.1. when `apache-airflow-providers-airbyte>=5.2.5`, you'll prompted with Client Id/Secret:
+```txt
+Connection Id: airbyte_default
+Connection Type: Airbyte
+
+Host: http://host.docker.internal:8000/api/public/v1/
+Token URL: <blank>
+
+Client ID: <Client-ID>
+Client Secret: <Client-Secret>
+```
+
+3.2. when `apache-airflow-providers-airbyte==3.9.0`, you'll be prompted with Login/Password:
 ```txt
 Connection Id: airbyte_default
 Connection Type: Airbyte
@@ -35,14 +57,6 @@ Schema: http
 Port: 8000
 Login:    <Email>
 Password: <Password>
-```
-
-**3.** Setup a Connection to DataHub:
-```txt
-Connection Id: datahub_rest_default
-Connection Type: DataHub REST Server
-Server Endpoint: http://host.docker.internal:9090
-Password: <blank>
 ```
 
 
