@@ -90,46 +90,35 @@ class AirbyteConnectionSource(Source):
         """Generate Metadata Change Proposals (MCPs) for one Airbyte connection.
 
         This is the core method called by the DataHub ingestion framework.
-        It builds a DataFlow and a DataJob, wires up lineage, and yields
-        the resulting MCPs as :class:`MetadataWorkUnit` objects that the
-        framework forwards to the configured sink.
+        It builds a DataFlow and a DataJob, wires up lineage via
+        :meth:`build_upstream_urns` and :meth:`build_downstream_urns`, and
+        yields the resulting MCPs as :class:`MetadataWorkUnit` objects that
+        the framework forwards to the configured sink.
 
         **Entities created:**
 
-        1. **DataFlow** -- groups Airbyte connections under a single
-           orchestrator.  Its URN uses the Airflow DAG name as the flow ID
-           so that the Airbyte flow mirrors the Airflow DAG it belongs to::
+        1. **DataFlow** -- groups Airbyte connections under the
+           ``"Default_Workspace"`` flow within the ``airbyte`` orchestrator::
 
-               urn:li:dataFlow:(airbyte,hackernews_rss_bigquery,prod)
+               urn:li:dataFlow:(airbyte,Default_Workspace,prod)
 
         2. **DataJob** -- represents the Airbyte connection itself.  The
            connection UUID is used as the job ID for traceability::
 
                urn:li:dataJob:(
-                   urn:li:dataFlow:(airbyte,hackernews_rss_bigquery,prod),
+                   urn:li:dataFlow:(airbyte,Default_Workspace,prod),
                    e37988e6-8ed5-465c-abb2-150639819c62
                )
 
         **Lineage wired:**
 
-        * **Upstream** -- the Airflow task that triggers this sync is added
-          to ``job.upstream_urns``, creating a ``consumes`` edge from the
-          Airflow DataJob to the Airbyte DataJob::
+        * **Upstream** -- built by :meth:`build_upstream_urns`.  One or more
+          Airflow tasks that trigger Airbyte syncs, creating ``consumes``
+          edges from the Airflow DataJobs to the Airbyte DataJob.
 
-              urn:li:dataJob:(
-                  urn:li:dataFlow:(airflow,hackernews_rss_bigquery,prod),
-                  hackernews_rss_front
-              )
-
-        * **Downstream** -- the BigQuery table produced by the sync is added
-          to ``job.outlets``, creating a ``produces`` edge from the Airbyte
-          DataJob to the BigQuery Dataset::
-
-              urn:li:dataset:(
-                  urn:li:dataPlatform:bigquery,
-                  iobruno-gcp-labs.hackernews_rss_raw.frontpage_items,
-                  PROD
-              )
+        * **Downstream** -- built by :meth:`build_downstream_urns`.  One or
+          more BigQuery tables produced by the syncs, creating ``produces``
+          edges from the Airbyte DataJob to the BigQuery Datasets.
 
         Yields:
             :class:`MetadataWorkUnit` instances wrapping each MCP generated
@@ -140,8 +129,8 @@ class AirbyteConnectionSource(Source):
 
         flow = DataFlow(orchestrator="airbyte", id="Default_Workspace", env=env)
         job = DataJob(id=cfg.airbyte_connection_id, flow_urn=flow.urn, name=cfg.airflow_task)
-        job.upstream_urns.append(self.fetch_upstream_relations(cfg))
-        job.outlets.append(self.fetch_downstream_relations(cfg))
+        job.upstream_urns.extend(self.build_upstream_urns(cfg))
+        job.outlets.extend(self.build_downstream_urns(cfg))
 
         for mcp in flow.generate_mcp():
             yield MetadataWorkUnit.from_metadata(mcp)
@@ -149,10 +138,46 @@ class AirbyteConnectionSource(Source):
         for mcp in job.generate_mcp():
             yield MetadataWorkUnit.from_metadata(mcp)
 
-    def fetch_upstream_relations(self, cfg: AirbyteConnectionSourceConfig) -> DataJobUrn:
+    def build_upstream_urns(self, cfg: AirbyteConnectionSourceConfig) -> list[DataJobUrn]:
+        """Build upstream Airflow DataJob URNs for this Airbyte connection.
+
+        Constructs one or more :class:`DataJobUrn` instances pointing to the
+        Airflow tasks responsible for triggering Airbyte syncs.  These URNs
+        are added to ``job.upstream_urns`` so that DataHub draws lineage
+        edges from the Airflow tasks to the Airbyte DataJob.
+
+        Each resulting URN follows the pattern::
+
+            urn:li:dataJob:(
+                urn:li:dataFlow:(airflow,<airflow_dag>,<environment>),
+                <airflow_task>
+            )
+
+        Returns:
+            A list of :class:`DataJobUrn` identifying the upstream Airflow tasks.
+        """
         airflow_flow_urn = DataFlowUrn("airflow", cfg.airflow_dag, cfg.environment)
         airflow_task_urn = DataJobUrn(airflow_flow_urn, cfg.airflow_task)
-        return airflow_task_urn
+        return [airflow_task_urn]
 
-    def fetch_downstream_relations(self, cfg: AirbyteConnectionSourceConfig) -> DatasetUrn:
-        return DatasetUrn.create_from_ids("bigquery", cfg.bigquery_table, "PROD")
+    def build_downstream_urns(self, cfg: AirbyteConnectionSourceConfig) -> list[DatasetUrn]:
+        """Build downstream BigQuery Dataset URNs for this Airbyte connection.
+
+        Constructs one or more :class:`DatasetUrn` instances pointing to the
+        BigQuery table produced by the Airbyte sync and/or other downstream assets.
+
+        These URNs are added to ``job.outlets`` so that DataHub draws lineage edges from the
+        Airbyte DataJob to the BigQuery Datasets.
+
+        Each resulting URN follows the pattern::
+
+            urn:li:dataset:(
+                urn:li:dataPlatform:bigquery,
+                <bigquery_table>,
+                PROD
+            )
+
+        Returns:
+            A list of :class:`DatasetUrn` identifying the downstream Datasets (BigQuery table).
+        """
+        return [DatasetUrn.create_from_ids("bigquery", cfg.bigquery_table, "PROD")]
