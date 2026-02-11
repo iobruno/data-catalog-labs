@@ -3,8 +3,10 @@ source:
   config:
     airflow_dag: ${AIRFLOW_DAG_NAME}
     airflow_task: ${AIRFLOW_TASK_NAME}
-    bigquery_table: ${BIGQUERY_TABLE_FQN}
     airbyte_connection_id: ${AIRBYTE_CONNECTION_ID}
+    airbyte_client_id: ${AIRBYTE_CLIENT_ID}
+    airbyte_client_secret: ${AIRBYTE_CLIENT_SECRET}
+    airbyte_server_url: ${AIRBYTE_SERVER_URL}
     environment: "prod"
 
 sink:
