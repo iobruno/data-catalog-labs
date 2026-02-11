@@ -2,15 +2,20 @@ from dataclasses import dataclass, field
 
 from datahub.api.entities.datajob.dataflow import DataFlow
 from datahub.api.entities.datajob.datajob import DataJob
+from datahub.emitter.mce_builder import make_data_platform_urn
+from datahub.emitter.mcp import MetadataChangeProposalWrapper
 from datahub.ingestion.api.common import PipelineContext
+from datahub.ingestion.api.decorators import platform_name
 from datahub.ingestion.api.source import Source, SourceReport
 from datahub.ingestion.api.workunit import MetadataWorkUnit
+from datahub.metadata.schema_classes import DataPlatformInfoClass, PlatformTypeClass
 from datahub.metadata.urns import DataFlowUrn, DataJobUrn, DatasetUrn
 
 from datahub_airbyte.airbyte_client import AirbyteClient
 from datahub_airbyte.config import AirbyteConnectionSourceConfig
 
 
+@platform_name("Airbyte", id="airbyte")
 @dataclass
 class AirbyteConnectionSource(Source):
     """Custom DataHub ingestion source that registers an Airbyte connection as
@@ -69,6 +74,57 @@ class AirbyteConnectionSource(Source):
         """
         return self.report
 
+    def _emit_platform_registration(self):
+        """Emit a DataPlatformInfo MCP to register ``airbyte`` as a known platform.
+
+        DataHub ships with built-in definitions for common platforms (Airflow,
+        BigQuery, dbt, etc.), but Airbyte is not among them.  Without a
+        platform definition the UI shows a "Platform not found" warning next
+        to every entity whose URN references ``urn:li:dataPlatform:airbyte``.
+
+        This method creates the missing definition by yielding a single
+        :class:`MetadataChangeProposalWrapper` with a
+        :class:`DataPlatformInfoClass` aspect.  The MCP is idempotent — if
+        the platform already exists, DataHub simply overwrites with the same
+        values.
+
+        **Aspect fields:**
+
+        * ``name`` — internal identifier (``"airbyte"``), must match the
+          platform segment used in entity URNs.
+        * ``type`` — :attr:`PlatformTypeClass.OTHERS` since Airbyte is an
+          EL(T) tool, not a database or message broker.
+        * ``datasetNameDelimiter`` — ``"."`` by convention.
+        * ``displayName`` — human-readable label shown in the DataHub UI.
+        * ``logoUrl`` — URL to an SVG logo displayed alongside the platform
+          name in the UI.
+
+        **Resulting entity:**
+
+        ::
+
+            urn:li:dataPlatform:airbyte
+                aspect: dataPlatformInfo
+                    name       = "airbyte"
+                    type       = OTHERS
+                    displayName = "Airbyte"
+                    logoUrl    = "<svg url>"
+
+        Yields:
+            :class:`MetadataWorkUnit` wrapping the platform registration MCP.
+        """
+        platform_mcp = MetadataChangeProposalWrapper(
+            entityUrn=make_data_platform_urn("airbyte"),
+            aspect=DataPlatformInfoClass(
+                name="airbyte",
+                type=PlatformTypeClass.OTHERS,
+                datasetNameDelimiter=".",
+                displayName="Airbyte",
+                logoUrl="https://www.svgrepo.com/show/394174/github.svg",
+            ),
+        )
+        yield MetadataWorkUnit.from_metadata(platform_mcp)
+
     def get_workunits_internal(self):
         """Generate Metadata Change Proposals (MCPs) for one Airbyte connection.
 
@@ -106,6 +162,8 @@ class AirbyteConnectionSource(Source):
             :class:`MetadataWorkUnit` instances wrapping each MCP generated
             by the DataFlow and DataJob helpers.
         """
+        yield from self._emit_platform_registration()
+
         cfg = self.source_config
 
         upstream_urns = self.build_upstream_urns(cfg)
