@@ -31,14 +31,6 @@ class AirbyteConnectionSource(Source):
 
     This source processes **one connection per invocation**.  Run the recipe
     multiple times with different env vars to register several connections.
-
-    Usage::
-
-        AIRFLOW_DAG_NAME=hackernews_rss_bigquery \\
-        AIRFLOW_TASK_NAME=hackernews_rss_front \\
-        BIGQUERY_TABLE_FQN=iobruno-gcp-labs.hackernews_rss_raw.frontpage_items \\
-        AIRBYTE_CONNECTION_ID=e37988e6-8ed5-465c-abb2-150639819c62 \\
-        datahub ingest -c recipe.yml
     """
 
     source_config: AirbyteConnectionSourceConfig
@@ -146,17 +138,21 @@ class AirbyteConnectionSource(Source):
         cfg = self.source_config
         env = cfg.environment
 
-        flow = DataFlow(orchestrator="airbyte", id=cfg.airflow_dag, env=env)
-
+        flow = DataFlow(orchestrator="airbyte", id="Default_Workspace", env=env)
         job = DataJob(id=cfg.airbyte_connection_id, flow_urn=flow.urn, name=cfg.airflow_task)
-
-        airflow_flow_urn = DataFlowUrn("airflow", cfg.airflow_dag, env)
-        job.upstream_urns.append(DataJobUrn(airflow_flow_urn, cfg.airflow_task))
-
-        job.outlets.append(DatasetUrn.create_from_ids("bigquery", cfg.bigquery_table, "PROD"))
+        job.upstream_urns.append(self.fetch_upstream_relations(cfg))
+        job.outlets.append(self.fetch_downstream_relations(cfg))
 
         for mcp in flow.generate_mcp():
             yield MetadataWorkUnit.from_metadata(mcp)
 
         for mcp in job.generate_mcp():
             yield MetadataWorkUnit.from_metadata(mcp)
+
+    def fetch_upstream_relations(self, cfg: AirbyteConnectionSourceConfig) -> DataJobUrn:
+        airflow_flow_urn = DataFlowUrn("airflow", cfg.airflow_dag, cfg.environment)
+        airflow_task_urn = DataJobUrn(airflow_flow_urn, cfg.airflow_task)
+        return airflow_task_urn
+
+    def fetch_downstream_relations(self, cfg: AirbyteConnectionSourceConfig) -> DatasetUrn:
+        return DatasetUrn.create_from_ids("bigquery", cfg.bigquery_table, "PROD")
