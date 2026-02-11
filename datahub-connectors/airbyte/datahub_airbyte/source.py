@@ -107,16 +107,16 @@ class AirbyteConnectionSource(Source):
             by the DataFlow and DataJob helpers.
         """
         cfg = self.source_config
-        env = cfg.environment
-
-        flow = DataFlow(orchestrator="airbyte", id="", env=env)
-        job = DataJob(id=cfg.airbyte_connection_id, flow_urn=flow.urn, name=cfg.airflow_task)
 
         upstream_urns = self.build_upstream_urns(cfg)
-        job.upstream_urns.extend(upstream_urns)
+        job_url, workspace_name, downstream_urns = self.fetch_downstream_details(cfg)
 
-        job.url, flow.id, downstream_urns = self.fetch_downstream_details(cfg)
+        flow = DataFlow(orchestrator="airbyte", id=workspace_name, env=cfg.environment)
+        job = DataJob(id=cfg.airbyte_connection_id, flow_urn=flow.urn, name=cfg.airflow_task)
+
+        job.upstream_urns.extend(upstream_urns)
         job.outlets.extend(downstream_urns)
+        job.url = job_url
 
         for mcp in flow.generate_mcp():
             yield MetadataWorkUnit.from_metadata(mcp)
@@ -135,9 +135,7 @@ class AirbyteConnectionSource(Source):
         airflow_task_urn = DataJobUrn(airflow_flow_urn, cfg.airflow_task)
         return [airflow_task_urn]
 
-    def fetch_downstream_details(
-        self, cfg: AirbyteConnectionSourceConfig
-    ) -> tuple[str, str, list[DatasetUrn]]:
+    def fetch_downstream_details(self, cfg: AirbyteConnectionSourceConfig) -> tuple[str, str, list[DatasetUrn]]:
         """Fetch connection metadata from Airbyte and build downstream Dataset URNs.
 
         Calls the Airbyte API to discover the destination's BigQuery project,
@@ -145,12 +143,11 @@ class AirbyteConnectionSource(Source):
         slug (used as the DataFlow ID), and a list of BigQuery Dataset URNs.
         """
         client = AirbyteClient(
-            cfg.airbyte_server_url, cfg.airbyte_client_id, cfg.airbyte_client_secret
+            cfg.airbyte_server_url,
+            cfg.airbyte_client_id,
+            cfg.airbyte_client_secret,
         )
         conn_details = client.fetch_connection_details(conn_id=cfg.airbyte_connection_id)
-
-        dataset_urns = [
-            DatasetUrn.create_from_ids("bigquery", table, "PROD") for table in conn_details.tables
-        ]
+        dataset_urns = [DatasetUrn.create_from_ids("bigquery", table, "PROD") for table in conn_details.tables]
 
         return conn_details.url, conn_details.workspace, dataset_urns
