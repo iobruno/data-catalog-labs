@@ -1,0 +1,15 @@
+workspace:
+  id: "c6171c23-c173-4eff-bdcf-9a1713fa5ca8"
+  name: "hackernews_rss_bigquery"
+  base_url: "http://localhost:8000"
+
+environment: "prod"
+
+datahub:
+  server: "http://localhost:9090"
+
+connections:
+  - id: "e37988e6-8ed5-465c-abb2-150639819c62"
+    name: "hackernews_rss_front"
+    upstream_datajob: "urn:li:dataJob:(urn:li:dataFlow:(airflow,hackernews_rss_bigquery,prod),hackernews_rss_front)"
+    downstream_dataset: "urn:li:dataset:(urn:li:dataPlatform:bigquery,iobruno-gcp-labs.hackernews_rss_raw.frontpage_items,PROD)"
