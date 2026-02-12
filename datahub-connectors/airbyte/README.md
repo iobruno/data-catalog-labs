@@ -17,19 +17,28 @@ To work on this, you'll need DataHub, Airflow, and Airbyte infrastructure up and
 
 ## DataHub Custom Recipe Ingestion
 
-### Local Execution
-
-**1.** Install dependencies from pyproject.toml and activate the created virtualenv:
+Install dependencies from pyproject.toml and activate the created virtualenv:
 ```shell
 uv sync && source .venv/bin/activate
 ```
 
-**2.** Fetch your airbyte local credentials (Client-Id and Client-Secret)
+### Register Airbyte Platform (one-time setup)
+
+```shell
+datahub put platform \
+  --name airbyte \
+  --display_name "Airbyte" \
+  --logo "https://cdn.brandfetch.io/id2WO4wLxK/theme/dark/symbol.svg?c=1bxid64Mup7aczewSAYMX&t=1668082116314"
+```
+
+### Local Execution
+
+**1.** Fetch your airbyte local credentials (Client-Id and Client-Secret)
 ```shell
 abctl local credentials
 ```
 
-**3.** Trigger the ingestion pipeline with [recipe.yml](./recipe.yml):
+**2.** Trigger the ingestion pipeline with [recipe.yml](./recipe.yml):
 ```shell
 AIRBYTE_SERVER_URL=http://localhost:8000/api/public/v1/ \
 AIRBYTE_CLIENT_ID=<client-id> \
@@ -68,5 +77,5 @@ docker run -d --rm \
 - [x] Build an Airbyte Client to fetch downstream details from Airbyte (BigQuery FQN table, Connection URL, Workspace name)
 - [x] Upstream and Downstream relationships are reflected accordingly on DataHub
 - [x] The DataJob have a link to `View in Airbyte`
-- [ ] Register Airbyte as a Platform so users can browser by Platform
-- [ ] Register an SVG logo for Airbyte to uniquely differenciate from other platforms
+- [x] Register Airbyte as a Platform so users can browser by Platform
+- [x] Register an SVG logo for Airbyte to uniquely differenciate from other platforms
