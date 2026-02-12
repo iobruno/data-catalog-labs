@@ -120,7 +120,7 @@ class AirbyteConnectionSource(Source):
                 type=PlatformTypeClass.OTHERS,
                 datasetNameDelimiter=".",
                 displayName="Airbyte",
-                logoUrl="https://www.svgrepo.com/show/394174/github.svg",
+                logoUrl="https://cdn.brandfetch.io/id2WO4wLxK/theme/dark/symbol.svg?c=1bxid64Mup7aczewSAYMX&t=1668082116314",
             ),
         )
         yield MetadataWorkUnit.from_metadata(platform_mcp)
