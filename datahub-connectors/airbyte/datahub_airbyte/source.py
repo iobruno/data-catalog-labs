@@ -3,6 +3,7 @@ from dataclasses import dataclass, field
 from datahub.api.entities.datajob.dataflow import DataFlow
 from datahub.api.entities.datajob.datajob import DataJob
 from datahub.ingestion.api.common import PipelineContext
+from datahub.ingestion.api.decorators import platform_name
 from datahub.ingestion.api.source import Source, SourceReport
 from datahub.ingestion.api.workunit import MetadataWorkUnit
 from datahub.metadata.urns import DataFlowUrn, DataJobUrn, DatasetUrn
@@ -11,6 +12,7 @@ from datahub_airbyte.airbyte_client import AirbyteClient
 from datahub_airbyte.config import AirbyteConnectionSourceConfig
 
 
+@platform_name("Airbyte", id="airbyte")
 @dataclass
 class AirbyteConnectionSource(Source):
     """Custom DataHub ingestion source that registers an Airbyte connection as

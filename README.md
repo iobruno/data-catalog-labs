@@ -48,6 +48,11 @@ docker build -t datahub-ingest:latest datahub/ --no-cache
 Follow the instructions on [terraform](./terraform/) for guidelines on how to run/apply
 
 
+8. Update `/etc/hosts` to resolve 'host.docker.internal' to loopback address
+```shell
+sudo sh -c 'echo "127.0.0.1       host.docker.internal" >> /etc/hosts'
+```
+
 ## Reference Docs
 Refer to the specific project folder on how to start each component individually
 
