@@ -44,7 +44,6 @@ datahub ingest -c recipe.yml
 ### Containerization
 
 **1.** Build the Docker Image with:
-
 ```shell
 docker build -t datahub-ingest-airbyte:latest . --no-cache
 ```
