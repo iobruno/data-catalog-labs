@@ -85,7 +85,7 @@ with DAG(
             "AIRBYTE_CLIENT_ID": airbyte_conn.login,
             "AIRBYTE_CLIENT_SECRET": airbyte_conn.password,
             "AIRFLOW_DAG_NAME": dag.dag_id,
-            "AIRFLOW_TASK_NAME": hackernews_rss_comments.task_id,
+            "AIRFLOW_TASK_NAME": hackernews_rss_front.task_id,
         },
     )
 
@@ -100,7 +100,7 @@ with DAG(
             "AIRBYTE_CLIENT_ID": airbyte_conn.login,
             "AIRBYTE_CLIENT_SECRET": airbyte_conn.password,
             "AIRFLOW_DAG_NAME": dag.dag_id,
-            "AIRFLOW_TASK_NAME": hackernews_rss_comments.task_id,
+            "AIRFLOW_TASK_NAME": hackernews_rss_newest.task_id,
         },
     )
 
