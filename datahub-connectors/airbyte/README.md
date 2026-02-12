@@ -15,9 +15,14 @@ To work on this, you'll need DataHub, Airflow, and Airbyte infrastructure up and
 **3.** Spin up Airbyte if it's not already running - follow [Airbyte - Getting Started](../../airbyte/README.md#getting-started)
 
 
-## One-time Setup: Register Airbyte Platform
+## DataHub Custom Recipe Ingestion
 
-Airbyte is not a built-in DataHub platform. Register it once so the UI displays a proper name and logo:
+Install dependencies from pyproject.toml and activate the created virtualenv:
+```shell
+uv sync && source .venv/bin/activate
+```
+
+### Register Airbyte Platform (one-time setup)
 
 ```shell
 datahub put platform \
@@ -26,22 +31,14 @@ datahub put platform \
   --logo "https://cdn.brandfetch.io/id2WO4wLxK/theme/dark/symbol.svg?c=1bxid64Mup7aczewSAYMX&t=1668082116314"
 ```
 
-
-## DataHub Custom Recipe Ingestion
-
 ### Local Execution
 
-**1.** Install dependencies from pyproject.toml and activate the created virtualenv:
-```shell
-uv sync && source .venv/bin/activate
-```
-
-**2.** Fetch your airbyte local credentials (Client-Id and Client-Secret)
+**1.** Fetch your airbyte local credentials (Client-Id and Client-Secret)
 ```shell
 abctl local credentials
 ```
 
-**3.** Trigger the ingestion pipeline with [recipe.yml](./recipe.yml):
+**2.** Trigger the ingestion pipeline with [recipe.yml](./recipe.yml):
 ```shell
 AIRBYTE_SERVER_URL=http://localhost:8000/api/public/v1/ \
 AIRBYTE_CLIENT_ID=<client-id> \
