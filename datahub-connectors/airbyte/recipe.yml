@@ -1,0 +1,22 @@
+source:
+  type: "datahub_airbyte.source.AirbyteConnectionSource"
+  config:
+    airflow_dag: ${AIRFLOW_DAG_NAME}
+    airflow_task: ${AIRFLOW_TASK_NAME}
+    airbyte_connection_id: ${AIRBYTE_CONNECTION_ID}
+    airbyte_client_id: ${AIRBYTE_CLIENT_ID}
+    airbyte_client_secret: ${AIRBYTE_CLIENT_SECRET}
+    airbyte_server_url: ${AIRBYTE_SERVER_URL}
+    environment: "prod"
+
+sink:
+  type: "datahub-kafka"
+  config:
+    connection:
+     bootstrap: "host.docker.internal:9093"
+     schema_registry_url: "http://host.docker.internal:8081"
+
+  # Alternatively, you can use DataHub REST Server
+  # type: "datahub-rest"
+  # config:
+  #   server: "http://host.docker.internal:9090"
