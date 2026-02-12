@@ -15,6 +15,18 @@ To work on this, you'll need DataHub, Airflow, and Airbyte infrastructure up and
 **3.** Spin up Airbyte if it's not already running - follow [Airbyte - Getting Started](../../airbyte/README.md#getting-started)
 
 
+## One-time Setup: Register Airbyte Platform
+
+Airbyte is not a built-in DataHub platform. Register it once so the UI displays a proper name and logo:
+
+```shell
+datahub put platform \
+  --name airbyte \
+  --display_name "Airbyte" \
+  --logo "https://cdn.brandfetch.io/id2WO4wLxK/theme/dark/symbol.svg?c=1bxid64Mup7aczewSAYMX&t=1668082116314"
+```
+
+
 ## DataHub Custom Recipe Ingestion
 
 ### Local Execution
@@ -68,5 +80,5 @@ docker run -d --rm \
 - [x] Build an Airbyte Client to fetch downstream details from Airbyte (BigQuery FQN table, Connection URL, Workspace name)
 - [x] Upstream and Downstream relationships are reflected accordingly on DataHub
 - [x] The DataJob have a link to `View in Airbyte`
-- [ ] Register Airbyte as a Platform so users can browser by Platform
-- [ ] Register an SVG logo for Airbyte to uniquely differenciate from other platforms
+- [x] Register Airbyte as a Platform so users can browser by Platform
+- [x] Register an SVG logo for Airbyte to uniquely differenciate from other platforms
