@@ -6,8 +6,7 @@ readme = "README.md"
 requires-python = ">=3.12,<3.14"
 
 dependencies = [
-    "pyspark-client>=4.0.1,<4.1",   # for Spark-Connect
-    "pyspark>=4.0.1,<4.1",
+    "pyspark>=3.5,<4.0",
     "pyarrow>=23.0.0,<24.0",
 ]
 
