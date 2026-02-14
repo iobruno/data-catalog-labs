@@ -12,6 +12,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "acryl-datahub==1.4.0.2",    
     "ruff>=0.15",
     "jupyterlab>=4.5.3",
 ]
