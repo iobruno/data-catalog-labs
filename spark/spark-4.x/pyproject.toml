@@ -1,13 +1,12 @@
 [project]
 name = "datahub-pyspark-lineage"
 version = "2.0"
-description = "Batch processing with PySpark 4"
+description = "Batch processing with PySpark 4.x"
 readme = "README.md"
 requires-python = ">=3.12,<3.14"
 
 dependencies = [
-    "pyspark>=4.0,<4.1",
-    "pyspark-connect>=4.0,<4.1",
+    "pyspark[connect]>=4.0.1,<4.1",
     "pyarrow>=23.0.0,<24.0",
 ]
 
