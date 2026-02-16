@@ -1,0 +1,77 @@
+x-spark-image: &spark-image apache/spark:${SPARK_VERSION:-3.5.8-scala2.12-java17-python3-ubuntu}
+
+x-spark-common:
+  &spark-common
+  image: *spark-image
+  environment:
+    &spark-common-env
+    SPARK_NO_DAEMONIZE: true    # Forces the process to run in foreground (req. for Docker)
+    GOOGLE_APPLICATION_CREDENTIALS: "/secrets/gcp_credentials.json"
+  volumes:
+    &spark-common-vol
+    - ${GOOGLE_APPLICATION_CREDENTIALS:?GOOGLE_APPLICATION_CREDENTIALS is missing}:/secrets/gcp_credentials.json
+    - ./logs/:/opt/spark/logs/
+    - ./conf/spark-3.5-standalone.conf:/opt/spark/conf/spark-standalone.conf
+
+services:
+  spark-master:
+    <<: *spark-common
+    container_name: spark-master
+    command: |
+      /opt/spark/sbin/start-master.sh
+      --properties-file /opt/spark/conf/spark-standalone.conf
+      --webui-port 4040
+    ports:
+      - '4040:4040'   # default: 8080 for master
+      - '7077:7077'
+    restart: on-failure:5
+
+  spark-worker1:
+    <<: *spark-common
+    container_name: spark-worker1
+    command: > 
+      /opt/spark/sbin/start-worker.sh 
+      spark://spark-master:7077 
+      --cores 2
+      --memory 4G
+      --properties-file /opt/spark/conf/spark-standalone.conf
+      --webui-port 4041
+    ports:
+      - '4041:4041'   # default: 8081 for worker
+    depends_on:
+      spark-master:
+        condition: service_started
+    restart: on-failure:5
+
+  spark-worker2:
+    <<: *spark-common
+    container_name: spark-worker2
+    command: > 
+      /opt/spark/sbin/start-worker.sh 
+      spark://spark-master:7077 
+      --cores 4
+      --memory 6G
+      --properties-file /opt/spark/conf/spark-standalone.conf
+      --webui-port 4042
+    ports:
+      - '4042:4042'   # default: 8081 for worker
+    depends_on:
+      spark-master:
+        condition: service_started
+    restart: on-failure:5
+
+  spark-connect:
+    <<: *spark-common
+    container_name: spark-connect
+    command: |
+      /opt/spark/sbin/start-connect-server.sh
+      --master spark://spark-master:7077
+      --properties-file /opt/spark/conf/spark-standalone.conf
+      --packages org.apache.spark:spark-connect_2.12:3.5.7
+      --conf spark.jars.ivy=/tmp/.ivy2
+    ports:
+      - '15002:15002'
+    depends_on:
+      spark-master:
+        condition: service_started
+    restart: on-failure:3
