@@ -81,6 +81,29 @@ docker run --rm \
   datahub-bigquery-ingest:latest
 ```
 
+### Metabase
+
+**5.1.** Local Run:
+```shell
+export DATAHUB_REST_SERVER=http://host.docker.internal:9090
+export METABASE_URL=http://host.docker.internal:3000
+export METABASE_API_KEY=<metabase-api-key>
+```
+```shell
+uv run datahub ingest -c recipes/metabase.yml
+```
+
+**5.2.** Docker run:
+```shell
+docker build -t datahub-metabase-ingest:latest -f Dockerfile.metabase . --no-cache
+```
+```shell
+docker run --rm \
+  -e DATAHUB_REST_SERVER=http://host.docker.internal:9090 \
+  -e METABASE_URL=http://host.docker.internal:3000 \
+  -e METABASE_API_KEY=${METABASE_API_KEY} \
+  datahub-metabase-ingest:latest
+```
 
 ## GraphQL Queries
 

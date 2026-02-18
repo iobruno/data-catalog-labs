@@ -1,0 +1,40 @@
+# Reference Docs ::
+# https://docs.datahub.com/docs/generated/ingestion/sources/metabase
+pipeline_name: "datahub-metabase-ingest"
+
+source:
+  type: metabase
+  config:
+    connect_uri: "${METABASE_URL}"
+    api_key: "${METABASE_API_KEY}"
+
+    # Stateful ingestion for detecting deleted dashboards/charts
+    # Requires datahub-rest sink (not kafka) for checkpointing
+    stateful_ingestion:
+      remove_stale_metadata: true
+      enabled: true
+
+    exclude_other_user_collections: false
+
+    # Optional: Map Metabase DB engines to DataHub platforms
+    # engine_platform_map:
+    #   postgres: postgres
+    #   bigquery: bigquery
+
+    # Optional: Map Metabase database IDs to platform instances
+    # database_id_to_instance_map:
+    #   "1": "my_instance"
+
+    # default_schema: "public"
+
+sink:
+  # type: "datahub-kafka"
+  # config:
+  #   connection:
+  #     bootstrap: "${DATAHUB_KAFKA_BOOSTRAP_SERVERS}"
+  #     schema_registry_url: "${DATAHUB_SCHEMA_REGISTRY_URL}"
+
+  # Required for Stateful Ingestion
+  type: datahub-rest
+  config:
+    server: "${DATAHUB_REST_SERVER}"

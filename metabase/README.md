@@ -32,4 +32,4 @@ After Metabase is running:
 ## TODO's
 - [x] Bootstrap Metabase infrastructure in Docker
 - [x] Build Dashboards and Charts on Metabase
-- [ ] Integrate with DataHub using the [Metabase source connector](https://docs.datahub.com/docs/generated/ingestion/sources/metabase) 
+- [x] Integrate with DataHub using the [Metabase source connector](https://docs.datahub.com/docs/generated/ingestion/sources/metabase) 

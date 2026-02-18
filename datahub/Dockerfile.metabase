@@ -19,6 +19,8 @@ COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/pytho
 COPY --from=builder /usr/local/bin /usr/local/bin
 COPY --from=builder /datahub /datahub/
 
-ENV GOOGLE_APPLICATION_CREDENTIALS=/secrets/gcp_credentials.json
+ENV METABASE_URL=
+ENV METABASE_API_KEY=
+ENV DATAHUB_REST_SERVER=
 
-ENTRYPOINT ["sh", "-c", "datahub ingest -c recipes/bigquery.yml"]
+ENTRYPOINT ["sh", "-c", "datahub ingest -c recipes/metabase.yml"]
