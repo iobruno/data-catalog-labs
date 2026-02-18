@@ -36,8 +36,21 @@ pre-commit install
 docker compose up -d
 ```
 
+
+## Spark-submit Application
+
+```shell
+spark-submit \
+    --master spark://localhost:7077 \
+    --conf spark.eventLog.enabled=true \
+    --conf spark.eventLog.dir=file://$(pwd)/logs/ \
+    --packages io.acryl:acryl-spark-lineage_2.12:0.2.18,com.google.cloud.spark:spark-3.5-bigquery:0.44.0 \
+    spark_openlineage.py
+```
+
+
 ## TODO's:
 - [x] PEP-517: Packaging and dependency management with `uv`
 - [x] Spin up a Spark Cluster in Standalone mode w/ Spark Connect
 - [x] Connect a Notebook to a Spark Cluster via Spark Connect (emit events to DataHub)
-- [ ] `spark-submit` a SparkJob to a Standalone Cluster (emit events to DataHub)
+- [x] `spark-submit` a SparkJob to a Standalone Cluster (emit events to DataHub)
