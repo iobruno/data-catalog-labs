@@ -26,6 +26,10 @@ Alternatively you can run it with the **CeleryExecutor** with:
 docker compose -f compose.celery.yaml up --build -d
 ```
 
+## Airflow config
+
+### Connections
+
 **2.** Setup a Connection to DataHub:
 ```txt
 Connection Id: datahub_rest_default
@@ -44,6 +48,15 @@ Token URL: <blank>
 
 Client ID: <Client-ID>
 Client Secret: <Client-Secret>
+```
+
+### Variables
+
+Set the following Airflow Variables for [hackernews_rss_bigquery.py](./dags/hackernews_rss_bigquery.py)
+```
+hackernews_rss_front_conn_id    = <airbyte_conn_id_for_hackernews_rss_front>
+hackernews_rss_newest_conn_id   = <airbyte_conn_id_for_hackernews_rss_newest>
+hackernews_rss_comments_conn_id = <airbyte_conn_id_for_hackernews_rss_comments>
 ```
 
 

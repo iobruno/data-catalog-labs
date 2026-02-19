@@ -41,7 +41,20 @@ uv run datahub put platform \
 abctl local credentials
 ```
 
-**2.** Trigger the ingestion pipeline with [recipe.yml](./recipe.yml):
+**2.** Setup the ENV VARs to sink to DataHub:
+
+2.1A. If you're using the `datahub-kafka` on [dbt_datahub.yml](./dbt_datahub.yml), run:
+```shell
+export DATAHUB_KAFKA_BOOSTRAP_SERVERS=host.docker.internal:9093
+export DATAHUB_SCHEMA_REGISTRY_URL=http://host.docker.internal:8081
+```
+
+2.1B: Otherwise, if using the `datahub-rest` on [dbt_datahub.yml](./dbt_datahub.yml), run:
+```shell
+export DATAHUB_REST_SERVER=http://host.docker.internal:9090
+```
+
+**3.** Trigger the ingestion pipeline with [recipe.yml](./recipe.yml):
 ```shell
 AIRBYTE_SERVER_URL=http://localhost:8000/api/public/v1/ \
 AIRBYTE_CLIENT_ID=<client-id> \
@@ -63,12 +76,14 @@ docker build -t datahub-airbyte-ingest:latest . --no-cache
 **2.** Start a container with it:
 ```shell
 docker run --rm \
+    -e AIRBYTE_CONNECTION_ID=<airbyte-connection-id> \
+    -e AIRFLOW_TASK_NAME=<airflow-dag-task-name> \
+    -e AIRFLOW_DAG_NAME=<airflow-dag-name> \
     -e AIRBYTE_SERVER_URL=http://host.docker.internal:8000/api/public/v1/ \
     -e AIRBYTE_CLIENT_ID=<client-id> \
     -e AIRBYTE_CLIENT_SECRET=<client-secret> \
-    -e AIRBYTE_CONNECTION_ID=<airbyte-connection-id> \
-    -e AIRFLOW_DAG_NAME=<airflow-dag-name> \
-    -e AIRFLOW_TASK_NAME=<airflow-dag-task-name> \
+    -e DATAHUB_KAFKA_BOOSTRAP_SERVERS=host.docker.internal:9093 \
+    -e DATAHUB_SCHEMA_REGISTRY_URL=http://host.docker.internal:8081 \
     --name datahub-ingest-airbyte \
     datahub-airbyte-ingest:latest
 ```
