@@ -17,7 +17,7 @@ docker compose -f datahub/compose.yaml up -d
 
 2. Spin up Airflow
 ```shell
-docker compose -f airflow/compose.yaml up --build --force-recreate -d
+docker compose -f airflow/compose.yaml up --build -d
 ``` 
 
 3. Spin up Airbyte with abctl
@@ -33,20 +33,25 @@ abctl local install
 abctl local credentials
 ```
 
-5. Build the dbt-bigquery Docker Image
+5. Build the datahub-dbt-bigquery-ingest Docker Image
 ```shell
-docker build -t dbt-bigquery:latest dbt/ --no-cache
+docker build -t datahub-dbt-bigquery-ingest:latest dbt/ --no-cache
 ```
 
-6. Build the datahub-ingest Docker Image
+6. Build the databahub-airbyte-ingest Docker Image
 ```shell
-docker build -t datahub-ingest:latest datahub/ --no-cache
+docker build -t datahub-airbyte-ingest:latest datahub-connectors/airbyte/ --no-cache
+```
+
+7. Build the datahub-bigquery-ingest Docker Image
+```shell
+docker build -t datahub-bigquery-ingest:latest -f datahub/Dockerfile.bigquery datahub/ --no-cache
 ```
 
 7. Terraform 
-
+```txt
 Follow the instructions on [terraform](./terraform/) for guidelines on how to run/apply
-
+```
 
 8. Update `/etc/hosts` to resolve 'host.docker.internal' to loopback address
 ```shell
@@ -56,8 +61,9 @@ sudo sh -c 'echo "127.0.0.1       host.docker.internal" >> /etc/hosts'
 ## Reference Docs
 Refer to the specific project folder on how to start each component individually
 
-- [DataHub](datahub/README.md)
-- [Airflow](airflow/README.md)
-- [Airbyte](airbyte/README.md)
-- [dbt-bigQuery](dbt/README.md)
-- [Terraform](terraform/REA)
+- [DataHub](./datahub/README.md)
+- [Airflow](./airflow/README.md)
+- [Airbyte](./airbyte/README.md)
+- [datahub-Airbyte](./datahub-connectors/airbyte/README.md)
+- [dbt-bigQuery](./dbt/README.md)
+- [Terraform](./terraform/README.md)
