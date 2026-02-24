@@ -56,7 +56,7 @@ docker compose up -d
 **3.** (Optional) Access [Conduktor Web UI for Kafka on http://localhost:9000](http://localhost:9000)
 
 
-## DataHub Custom Recipe Ingestion
+## DataHub Custom Recipe Ingestion (via Docker)
 
 ### BigQuery
 
@@ -105,11 +105,40 @@ docker run --rm \
   datahub-metabase-ingest:latest
 ```
 
+### PostgreSQL
+
+**6.1.** Local Run:
+```shell
+export DATAHUB_REST_SERVER=http://host.docker.internal:9090
+export POSTGRES_HOST=host.docker.internal
+export POSTGRES_PORT=5432
+export POSTGRES_DB=reverse_etl
+export POSTGRES_USER=postgres
+export POSTGRES_PASSWORD=postgres
+```
+```shell
+uv run datahub ingest -c recipes/postgres.yml
+```
+
+**6.2.** Docker run:
+```shell
+docker build -t datahub-postgres-ingest:latest -f Dockerfile.postgres . --no-cache
+```
+```shell
+docker run --rm \
+  -e DATAHUB_REST_SERVER=http://host.docker.internal:9090 \
+  -e POSTGRES_HOST=host.docker.internal \
+  -e POSTGRES_PORT=5432 \
+  -e POSTGRES_DB=reverse_etl \
+  -e POSTGRES_USER=postgres \
+  -e POSTGRES_PASSWORD=postgres \
+  datahub-postgres-ingest:latest
+```
+
+
 ## GraphQL Queries
 
-To get a better idea of how the entities are modeles on DataHub as `dataFlow`, `dataJob`, `dataProcessInstance`, `dataSets`, among others,
-
-You can use the following Postman Collection of GraphQL queries:
+To get a better idea of how the entities are modeles on DataHub as `dataFlow`, `dataJob`, `dataProcessInstance`, `dataSets`, among others. You can use the following Postman Collection of GraphQL queries:
 
 ```
 https://www.postman.com/iobruno/workspace/vault/collection/6983fb194d8a7c94d2b82c6b?action=share&creator=52118286
