@@ -1,0 +1,36 @@
+x-sftp-image: &sftp-image lscr.io/linuxserver/openssh-server:${OPENSSH_SERVER_VERSION:-latest}
+
+services:
+  sftp-server:
+    image: *sftp-image
+    container_name: sftp-server
+    environment:
+      PUID: 1000
+      PGID: 1000
+      TZ: "Etc/UTC"
+      USER_NAME: "sftp"
+      USER_PASSWORD: "sftp"
+      PASSWORD_ACCESS: true
+    ports:
+      - "2222:2222"
+    volumes:
+      - vol-sftp-data:/data
+    depends_on:
+      sftp-init:
+        condition: service_completed_successfully
+
+  sftp-init:
+    image: *sftp-image
+    container_name: sftp-init
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - |
+        mkdir -p /data &&
+        curl -fSL --create-dirs -O --output-dir /data/ "https://github.com/DataTalksClub/nyc-tlc-data/releases/download/misc/taxi_zone_lookup.csv"
+    volumes:
+      - vol-sftp-data:/data
+
+volumes:
+  vol-sftp-data:
+    name: vol-sftp-data

@@ -11,6 +11,8 @@ dependencies = [
     "psycopg2-binary==2.9.11",                          # psycopg3 is only supported by SQLAlchemy 2.0+
 
     "apache-airflow-providers-airbyte==5.2.5",          # Airbyte operator
+    "apache-airflow-providers-sftp>=5.4.2,<5.5",        # SFTP hook (required by SFTPToGCSOperator)
+    "apache-airflow-providers-google>=19.0,<19.1",      # SFTPToGCSOperator + GCS hooks
     "apache-airflow-providers-docker>=4.4.5,<4.5",      # Docker operator for running containers
     "acryl-datahub-airflow-plugin[airflow2]==1.4.0.2",  # DataHub extension for OpenLineage (match Server version)
 ]
@@ -23,7 +25,7 @@ celery = [
 
 [dependency-groups]
 dev = [
-    "ruff>=0.14.14",
+    "ruff>=0.15",
     "jupyterlab>=4.5.3",
 ]
 

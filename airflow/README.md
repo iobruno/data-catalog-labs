@@ -50,6 +50,16 @@ Client ID: <Client-ID>
 Client Secret: <Client-Secret>
 ```
 
+**4.** Setup a Connection for SFTP:
+```txt
+Connection Id: sftp_default
+Connection Type: SFTP
+Host: host.docker.internal
+Port: 2222
+Username: sftp
+Password: sftp
+```
+
 ### Variables
 
 Set the following Airflow Variables for [hackernews_rss_bigquery.py](./dags/hackernews_rss_bigquery.py)
@@ -57,6 +67,11 @@ Set the following Airflow Variables for [hackernews_rss_bigquery.py](./dags/hack
 hackernews_rss_front_conn_id    = <airbyte_conn_id_for_hackernews_rss_front>
 hackernews_rss_newest_conn_id   = <airbyte_conn_id_for_hackernews_rss_newest>
 hackernews_rss_comments_conn_id = <airbyte_conn_id_for_hackernews_rss_comments>
+```
+
+Set the following Airflow Variable for [sftp2gcs_to_bigquery.py](./dags/sftp2gcs_to_bigquery.py)
+```
+sftp2gcs_to_bigquery_conn_id = <airbyte_conn_id_for_sftp2gcs_to_bigquery>
 ```
 
 
