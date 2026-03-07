@@ -15,6 +15,7 @@ x-metabase-common: &metabase-common
     MB_PLUGINS_DIR: ${MB_PLUGINS_DIR:-/app/plugins}
     MB_PASSWORD_LENGTH: 4
     MB_PASSWORD_COMPLEXITY: weak
+    MB_LOAD_SAMPLE_CONTENT: false
     MUID: ${MUID:-2000}
     MGID: ${MGID:-2000}
   volumes:
