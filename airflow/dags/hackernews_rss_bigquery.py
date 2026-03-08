@@ -58,6 +58,7 @@ with DAG(
             "DBT_BIGQUERY_SOURCE_DATASET": "hackernews_rss_raw",
             "DBT_BIGQUERY_TARGET_DATASET": "hackernews_rss",
             "DBT_BIGQUERY_DATASET_LOCATION": "us-central1",
+            "DATAHUB_REST_SERVER": "http://host.docker.internal:9090",
             "DATAHUB_KAFKA_BOOSTRAP_SERVERS": "host.docker.internal:9093",
             "DATAHUB_SCHEMA_REGISTRY_URL": "http://host.docker.internal:8081",
         },
