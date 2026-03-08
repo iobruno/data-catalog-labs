@@ -56,12 +56,26 @@ docker compose up -d
 **3.** (Optional) Access [Conduktor Web UI for Kafka on http://localhost:9000](http://localhost:9000)
 
 
-## DataHub Custom Recipe Ingestion (via Docker)
+## DataHub Custom Recipe Ingestion
+
+### Stateful Ingestion with datahub-kafka Sink
+
+- Metadata events (table schemas, lineage, views, etc.) are pushed to Kafka, which GMS consumes asynchronously — this is typically higher throughput and decouples the ingestion pipeline from GMS availability.
+- Pipeline state (what was seen in the last run) is read/written via the REST API (datahub_api). This is how `remove_stale_metadata` works — it compares the current run's entities against the previous run's state stored in GMS, and emits soft-delete events for anything that disappeared (e.g., a dropped table).
+
+So the two channels serve different purposes: Kafka for the bulk metadata flow, REST for the lightweight state bookkeeping.
+
+### Stateful Ingestion with datahub-rest Sink
+
+- Both metadata events and pipeline state are sent through the same REST API (GMS). This is simpler to configure since no separate `datahub_api` block is needed — the sink itself handles state management.
+- Ingestion is synchronous: each metadata event is written directly to GMS and acknowledged before the next one is sent. This makes it easier to debug but may have lower throughput compared to the Kafka sink.
+- Stateful ingestion (`remove_stale_metadata`) works out of the box with no additional configuration beyond enabling it in the source config.
 
 ### BigQuery
 
 **4.1.** Local Run:
 ```shell
+export DATAHUB_REST_SERVER=http://host.docker.internal:9090
 export DATAHUB_KAFKA_BOOSTRAP_SERVERS=host.docker.internal:9092
 export DATAHUB_SCHEMA_REGISTRY_URL=http://host.docker.internal:8081
 ```
@@ -75,6 +89,7 @@ docker build -t datahub-bigquery-ingest:latest -f Dockerfile.bigquery . --no-cac
 ```
 ```shell
 docker run --rm \
+  -e DATAHUB_REST_SERVER=http://host.docker.internal:9090 \
   -e DATAHUB_KAFKA_BOOSTRAP_SERVERS=host.docker.internal:9093 \
   -e DATAHUB_SCHEMA_REGISTRY_URL=http://host.docker.internal:8081 \
   -v ${GOOGLE_APPLICATION_CREDENTIALS}:/secrets/gcp_credentials.json \
@@ -86,6 +101,8 @@ docker run --rm \
 **5.1.** Local Run:
 ```shell
 export DATAHUB_REST_SERVER=http://host.docker.internal:9090
+export DATAHUB_KAFKA_BOOSTRAP_SERVERS=host.docker.internal:9092
+export DATAHUB_SCHEMA_REGISTRY_URL=http://host.docker.internal:8081
 export METABASE_URL=http://host.docker.internal:3000
 export METABASE_API_KEY=<metabase-api-key>
 ```
@@ -100,6 +117,8 @@ docker build -t datahub-metabase-ingest:latest -f Dockerfile.metabase . --no-cac
 ```shell
 docker run --rm \
   -e DATAHUB_REST_SERVER=http://host.docker.internal:9090 \
+  -e DATAHUB_KAFKA_BOOSTRAP_SERVERS=host.docker.internal:9093 \
+  -e DATAHUB_SCHEMA_REGISTRY_URL=http://host.docker.internal:8081 \
   -e METABASE_URL=http://host.docker.internal:3000 \
   -e METABASE_API_KEY=${METABASE_API_KEY} \
   datahub-metabase-ingest:latest
@@ -110,6 +129,8 @@ docker run --rm \
 **6.1.** Local Run:
 ```shell
 export DATAHUB_REST_SERVER=http://host.docker.internal:9090
+export DATAHUB_KAFKA_BOOSTRAP_SERVERS=host.docker.internal:9092
+export DATAHUB_SCHEMA_REGISTRY_URL=http://host.docker.internal:8081
 export POSTGRES_HOST=host.docker.internal
 export POSTGRES_PORT=5432
 export POSTGRES_DB=reverse_etl
@@ -127,6 +148,8 @@ docker build -t datahub-postgres-ingest:latest -f Dockerfile.postgres . --no-cac
 ```shell
 docker run --rm \
   -e DATAHUB_REST_SERVER=http://host.docker.internal:9090 \
+  -e DATAHUB_KAFKA_BOOSTRAP_SERVERS=host.docker.internal:9093 \
+  -e DATAHUB_SCHEMA_REGISTRY_URL=http://host.docker.internal:8081 \
   -e POSTGRES_HOST=host.docker.internal \
   -e POSTGRES_PORT=5432 \
   -e POSTGRES_DB=reverse_etl \

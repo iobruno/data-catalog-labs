@@ -1,18 +1,23 @@
+# Reference Docs ::
+# https://docs.datahub.com/docs/generated/ingestion/sources/postgres
 pipeline_name: "datahub-postgres-ingest"
+
+datahub_api:
+  server: "${DATAHUB_REST_SERVER}"
 
 source:
   type: postgres
   config:
+    # Stateful ingestion for detecting deleted tables
+    stateful_ingestion:
+      remove_stale_metadata: true
+      enabled: true
+      fail_safe_threshold: 95
+
     host_port: "${POSTGRES_HOST}:${POSTGRES_PORT}"
     database: "${POSTGRES_DB}"
     username: "${POSTGRES_USER}"
     password: "${POSTGRES_PASSWORD}"
-
-    # Stateful ingestion for detecting deleted dashboards/charts
-    # Requires datahub-rest sink (not kafka) for checkpointing
-    stateful_ingestion:
-      remove_stale_metadata: true
-      enabled: true
 
     # Enable query-based lineage extraction
     include_query_lineage: false
@@ -21,13 +26,13 @@ source:
     include_usage_statistics: false
 
 sink:
-  # type: "datahub-kafka"
-  # config:
-  #   connection:
-  #     bootstrap: "${DATAHUB_KAFKA_BOOSTRAP_SERVERS}"
-  #     schema_registry_url: "${DATAHUB_SCHEMA_REGISTRY_URL}"
-
-  # Required for Stateful Ingestion
-  type: datahub-rest
+  type: "datahub-kafka"
   config:
-    server: "${DATAHUB_REST_SERVER}"
+    connection:
+      bootstrap: "${DATAHUB_KAFKA_BOOSTRAP_SERVERS}"
+      schema_registry_url: "${DATAHUB_SCHEMA_REGISTRY_URL}"
+
+  # Alternatively, you can use DataHub REST Server
+  # type: datahub-rest
+  # config:
+  #   server: "${DATAHUB_REST_SERVER}"

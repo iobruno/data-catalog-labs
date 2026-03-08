@@ -117,12 +117,13 @@ docker build -t datahub-dbt-bigquery-ingest:latest . --no-cache
 **2.** Start a container with it:
 ```shell
 docker run --rm \
+  -e DATAHUB_REST_SERVER=http://host.docker.internal:9090 \
+  -e DATAHUB_KAFKA_BOOSTRAP_SERVERS=host.docker.internal:9093 \
+  -e DATAHUB_SCHEMA_REGISTRY_URL=http://host.docker.internal:8081 \
   -e DBT_BIGQUERY_PROJECT=iobruno-gcp-labs \
   -e DBT_BIGQUERY_SOURCE_DATASET=hackernews_rss_raw \
   -e DBT_BIGQUERY_TARGET_DATASET=hackernews_rss \
   -e DBT_BIGQUERY_DATASET_LOCATION=us-central1 \
-  -e DATAHUB_KAFKA_BOOSTRAP_SERVERS=host.docker.internal:9093 \
-  -e DATAHUB_SCHEMA_REGISTRY_URL=http://host.docker.internal:8081 \
   -v ${GOOGLE_APPLICATION_CREDENTIALS}:/secrets/gcp_credentials.json \
   datahub-dbt-bigquery-ingest:latest
 ```

@@ -21,6 +21,9 @@ COPY --from=builder /datahub /datahub/
 
 ENV METABASE_URL=
 ENV METABASE_API_KEY=
+
 ENV DATAHUB_REST_SERVER=
+ENV DATAHUB_KAFKA_BOOSTRAP_SERVERS=
+ENV DATAHUB_SCHEMA_REGISTRY_URL=
 
 ENTRYPOINT ["sh", "-c", "datahub ingest -c recipes/metabase.yml"]

@@ -1,12 +1,26 @@
+# Reference Docs ::
+# https://docs.datahub.com/docs/generated/ingestion/sources/dbt#module-dbt
+pipeline_name: "datahub-dbt-bigquery-ingest"
+
+datahub_api:
+  server: "${DATAHUB_REST_SERVER}"
+
 source:
   type: dbt
+
   config:
+    # Stateful ingestion for detecting deleted entities
+    stateful_ingestion:
+      enabled: true
+      remove_stale_metadata: true
+      fail_safe_threshold: 95
+
+    target_platform: "bigquery"
+
     manifest_path: "./target/manifest.json"
     catalog_path: "./target/catalog.json"
     run_results_paths:
       - "./target/run_results.json"
-
-    target_platform: "bigquery"
 
     include_column_lineage: true
     enable_meta_mapping: true

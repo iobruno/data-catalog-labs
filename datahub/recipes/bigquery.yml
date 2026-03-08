@@ -1,6 +1,18 @@
+# Reference Docs ::
+# https://docs.datahub.com/docs/generated/ingestion/sources/bigquery
+pipeline_name: "datahub-bigquery-ingest"
+
+datahub_api:
+  server: "${DATAHUB_REST_SERVER}"
+
 source:
   type: bigquery
   config:
+    # Stateful ingestion for detecting deleted tables
+    stateful_ingestion:
+      enabled: true
+      remove_stale_metadata: true
+      fail_safe_threshold: 95
 
     dataset_pattern:
       allow:

@@ -20,6 +20,8 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 COPY --from=builder /datahub /datahub/
 
 ENV GOOGLE_APPLICATION_CREDENTIALS=/secrets/gcp_credentials.json
+
+ENV DATAHUB_REST_SERVER=
 ENV DATAHUB_KAFKA_BOOSTRAP_SERVERS=
 ENV DATAHUB_SCHEMA_REGISTRY_URL=
 
