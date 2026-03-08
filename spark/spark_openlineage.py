@@ -11,6 +11,7 @@ if __name__ == "__main__":
         .config("spark.datahub.rest.server", "http://localhost:9090")
         .config("spark.datahub.metadata.dataset.materialize", "true")
         .config("spark.datahub.capture_spark_plan", "true")
+        .config("spark.datahub.stage_metadata_coalescing", "true")
         .getOrCreate()
     )
 

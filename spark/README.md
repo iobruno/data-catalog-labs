@@ -44,7 +44,8 @@ spark-submit \
     --master spark://localhost:7077 \
     --conf spark.eventLog.enabled=true \
     --conf spark.eventLog.dir=file://$(pwd)/logs/ \
-    --packages io.acryl:acryl-spark-lineage_2.12:0.2.18,com.google.cloud.spark:spark-3.5-bigquery:0.44.0 \
+    --packages io.acryl:acryl-spark-lineage_2.12:0.2.18 \
+    --jars https://storage.googleapis.com/spark-lib/bigquery/spark-3.5-bigquery-0.44.0.jar \
     spark_openlineage.py
 ```
 
