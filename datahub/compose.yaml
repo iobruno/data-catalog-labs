@@ -4,9 +4,6 @@ x-datahub-mae-consumer-image: &datahub-mae-consumer-image acryldata/datahub-mae-
 x-datahub-mce-consumer-image: &datahub-mce-consumer-image acryldata/datahub-mce-consumer:${DATAHUB_VERSION:-v1.6.0}
 x-datahub-upgrade-image: &datahub-upgrade-image acryldata/datahub-upgrade:${DATAHUB_VERSION:-v1.6.0}
 
-x-datahub-postgres-init-image: &datahub-postgres-init-image acryldata/datahub-postgres-setup:${DATAHUB_VERSION:-v1.4.0.3}
-x-datahub-opensearch-init-image: &datahub-opensearch-init-image acryldata/datahub-elasticsearch-setup:${DATAHUB_VERSION:-v1.4.0.3}
-
 x-postgres-image: &postgres-image postgres:${POSTGRES_VERSION:-18-alpine}
 x-opensearch-image: &opensearch-image opensearchproject/opensearch:${DATAHUB_SEARCH_TAG:-2.19.6}
 x-cp-kafka-image: &cp-kafka-image confluentinc/cp-kafka:${CONFLUENT_PLATFORM_VERSION:-8.2.2}
@@ -276,35 +273,6 @@ services:
       datahub-gms:
         condition: service_healthy
 
-  # Init Containers
-  datahub-postgres-init:
-    image: *datahub-postgres-init-image
-    container_name: datahub-postgres-init
-    hostname: datahub-postgres-init
-    environment:
-      POSTGRES_HOST: 'datahub-postgres'
-      POSTGRES_PORT: 5432
-      POSTGRES_USERNAME: 'datahub'
-      POSTGRES_PASSWORD: 'datahub'
-      DATAHUB_DB_NAME: 'datahub'
-    depends_on:
-      datahub-postgres:
-        condition: service_healthy
-
-  datahub-opensearch-init:
-    image: *datahub-opensearch-init-image
-    container_name: datahub-opensearch-init
-    hostname: datahub-opensearch-init
-    environment:
-      ELASTICSEARCH_HOST: 'datahub-opensearch'
-      ELASTICSEARCH_PORT: 9200
-      ELASTICSEARCH_PROTOCOL: 'http'
-      ELASTICSEARCH_USE_SSL: ${ELASTICSEARCH_USE_SSL:-false}
-      USE_AWS_ELASTICSEARCH: true
-    depends_on:
-      datahub-opensearch:
-        condition: service_healthy
-
   datahub-upgrade:
     image: *datahub-upgrade-image
     container_name: datahub-upgrade
@@ -338,6 +306,7 @@ services:
       ENTITY_REGISTRY_CONFIG_PATH: '/datahub/datahub-gms/resources/entity-registry.yml'
       BACKFILL_BROWSE_PATHS_V2: 'true'
       REPROCESS_DEFAULT_BROWSE_PATHS_V2: ${REPROCESS_DEFAULT_BROWSE_PATHS_V2:-false}
+      # New in 1.6.0 (replaces elasticsearch-setup and mysql/postgres-setup)
       DATAHUB_SQL_SETUP_ENABLED: 'true'
     depends_on:
       datahub-postgres:
