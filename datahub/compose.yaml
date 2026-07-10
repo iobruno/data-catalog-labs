@@ -6,7 +6,6 @@ x-datahub-upgrade-image: &datahub-upgrade-image acryldata/datahub-upgrade:${DATA
 
 x-datahub-postgres-init-image: &datahub-postgres-init-image acryldata/datahub-postgres-setup:${DATAHUB_VERSION:-v1.4.0.3}
 x-datahub-opensearch-init-image: &datahub-opensearch-init-image acryldata/datahub-elasticsearch-setup:${DATAHUB_VERSION:-v1.4.0.3}
-x-datahub-kafka-init-image: &datahub-kafka-init-image acryldata/datahub-kafka-setup:${DATAHUB_VERSION:-v1.2.0.1}
 
 x-postgres-image: &postgres-image postgres:${POSTGRES_VERSION:-18-alpine}
 x-opensearch-image: &opensearch-image opensearchproject/opensearch:${DATAHUB_SEARCH_TAG:-2.19.6}
@@ -304,19 +303,6 @@ services:
       USE_AWS_ELASTICSEARCH: true
     depends_on:
       datahub-opensearch:
-        condition: service_healthy
-
-  datahub-kafka-init:
-    image: *datahub-kafka-init-image
-    container_name: datahub-kafka-init
-    hostname: datahub-kafka-init
-    environment:
-      KAFKA_BOOTSTRAP_SERVER: 'datahub-kafka-broker0:29092'
-      DATAHUB_PRECREATE_TOPICS: ${DATAHUB_PRECREATE_TOPICS:-true}
-    depends_on:
-      datahub-kafka-broker0:
-        condition: service_healthy
-      datahub-schema-registry:
         condition: service_healthy
 
   datahub-upgrade:
