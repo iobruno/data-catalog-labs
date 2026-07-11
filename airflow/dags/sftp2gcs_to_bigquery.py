@@ -4,16 +4,17 @@ from airflow import DAG
 from airflow.datasets import Dataset
 from airflow.hooks.base import BaseHook
 from airflow.models import Variable
-from airflow.providers.google.cloud.transfers.sftp_to_gcs import SFTPToGCSOperator
 from airflow.providers.airbyte.operators.airbyte import AirbyteTriggerSyncOperator
 from airflow.providers.docker.operators.docker import DockerOperator
+from airflow.providers.google.cloud.transfers.sftp_to_gcs import SFTPToGCSOperator
 
 GCS_BUCKET = "iobruno-lakehouse-raw"
 GCS_PATH = "sftp-data/taxi_zone_lookup.csv"
 SFTP_PATH = "/data/taxi_zone_lookup.csv"
 
 airbyte_conn = BaseHook.get_connection("airbyte_default")
-sftp2gcs_to_bigquery_conn_id = Variable.get("sftp2gcs_to_bigquery_conn_id")
+
+sftp2gcs_to_bigquery_conn_id = Variable.get("sftp2gcs_to_bigquery_conn_id", None)
 
 with DAG(
     dag_id="sftp2gcs_to_bigquery",
