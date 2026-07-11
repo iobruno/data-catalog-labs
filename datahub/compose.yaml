@@ -153,17 +153,18 @@ services:
       KAFKA_SCHEMAREGISTRY_URL: 'http://datahub-schema-registry:8081'
       KAFKA_CONSUMER_STOP_ON_DESERIALIZATION_ERROR: ${KAFKA_CONSUMER_STOP_ON_DESERIALIZATION_ERROR:-true}
       DATAHUB_UPGRADE_HISTORY_KAFKA_CONSUMER_GROUP_ID: 'generic-duhe-consumer-job-client-gms'
-      # Consumers (disabled since mae- and mce- are standalone)
-      MAE_CONSUMER_ENABLED: false
-      MCE_CONSUMER_ENABLED: false
-      PE_CONSUMER_ENABLED: false
       # Auth
       METADATA_SERVICE_AUTH_ENABLED: ${METADATA_SERVICE_AUTH_ENABLED:-false}
       DATAHUB_TOKEN_SERVICE_SIGNING_KEY: ${DATAHUB_TOKEN_SERVICE_SIGNING_KEY:-WnEdIeTG/VVCLQqGwC/BAkqyY0k+H8NEAtWGejrBI94=}
       DATAHUB_TOKEN_SERVICE_SALT: ${DATAHUB_TOKEN_SERVICE_SALT:-ohDVbJBvHHVJh9S/UA7vkJ5SOkC3U0ER3bAQqOIaPus=}
+      # Consumers (disable when running mae- and mce- as standalone consumers)
+      MCP_CONSUMER_ENABLED: false
+      MCL_CONSUMER_ENABLED: false
+      PE_CONSUMER_ENABLED: false
+      UI_INGESTION_ENABLED: true
       # App config
       DATAHUB_SERVER_TYPE: ${DATAHUB_SERVER_TYPE:-prod}
-      UI_INGESTION_ENABLED: true
+      INGESTION_REPORTING_ENABLED: true
       DATAHUB_ANALYTICS_ENABLED: false
       ENTITY_SERVICE_ENABLE_RETENTION: true
       ENTITY_REGISTRY_CONFIG_PATH: '/datahub/datahub-gms/resources/entity-registry.yml'
@@ -212,17 +213,20 @@ services:
         condition: service_healthy
 
   # Ref.: https://github.com/datahub-project/datahub/blob/releases/v1.6.0/docker/datahub-mce-consumer/env/docker-without-neo4j.env
+  # Writes to DataHub GMS
   datahub-mce-consumer:
     image: *datahub-mce-consumer-image
     container_name: datahub-mce-consumer
     hostname: datahub-mce-consumer
     environment:
       # Consumer config
-      DATAHUB_UPGRADE_HISTORY_KAFKA_CONSUMER_GROUP_ID: 'generic-duhe-consumer-job-client-mcp'
-      MCE_CONSUMER_ENABLED: 'true'
-      MAE_CONSUMER_ENABLED: 'false'
-      PE_CONSUMER_ENABLED: 'false'
-      UI_INGESTION_ENABLED: 'false'
+      DATAHUB_UPGRADE_HISTORY_KAFKA_CONSUMER_GROUP_ID: 'datahub-mce-consumer-grp'
+      MCP_CONSUMER_ENABLED: true
+      MCL_CONSUMER_ENABLED: false
+      PE_CONSUMER_ENABLED: false
+      # GMS connection & auth
+      DATAHUB_TOKEN_SERVICE_SIGNING_KEY: ${DATAHUB_TOKEN_SERVICE_SIGNING_KEY:-WnEdIeTG/VVCLQqGwC/BAkqyY0k+H8NEAtWGejrBI94=}
+      DATAHUB_TOKEN_SERVICE_SALT: ${DATAHUB_TOKEN_SERVICE_SALT:-ohDVbJBvHHVJh9S/UA7vkJ5SOkC3U0ER3bAQqOIaPus=}
       # Metadata db (PostgreSQL)
       EBEAN_DATASOURCE_HOST: 'datahub-postgres:5432'
       EBEAN_DATASOURCE_USERNAME: 'datahub'
@@ -253,15 +257,18 @@ services:
         condition: service_healthy
 
   # Ref.: https://github.com/datahub-project/datahub/blob/releases/v1.6.0/docker/datahub-mae-consumer/env/docker-without-neo4j.env
+  # Writes to Elasticsearch/Opensearch & Neo4j
   datahub-mae-consumer:
     image: *datahub-mae-consumer-image
     container_name: datahub-mae-consumer
     hostname: datahub-mae-consumer
     environment:
       # Consumer config
-      MAE_CONSUMER_ENABLED: true
-      PE_CONSUMER_ENABLED: false
-      DATAHUB_UPGRADE_HISTORY_KAFKA_CONSUMER_GROUP_ID: 'generic-duhe-consumer-job-client-mcl'
+      MCP_CONSUMER_ENABLED: false
+      MCL_CONSUMER_ENABLED: true
+      PE_CONSUMER_ENABLED: true
+      UI_INGESTION_ENABLED: true
+      DATAHUB_UPGRADE_HISTORY_KAFKA_CONSUMER_GROUP_ID: 'datahub-mae-consumer-grp'
       # GMS connection
       DATAHUB_GMS_HOST: 'datahub-gms'
       DATAHUB_GMS_PORT: 8080
