@@ -6,27 +6,27 @@ readme = "README.md"
 requires-python = ">=3.11,<3.12"
 
 dependencies = [
-    "apache-airflow>=2.10.5,<2.11",                     # pin to 2.x to prevent airbyte-api from upgrading
-    "sqlalchemy>=1.4.54,<2.0",                          # Airflow doesn't yet support SQLAlchemy 2.x
-    "psycopg2-binary==2.9.11",                          # psycopg3 is only supported by SQLAlchemy 2.0+
+    "apache-airflow==2.11.1",                               # pin to 2.11 for parity with GCP Composer/AWS MWAA
+    "sqlalchemy>=1.4,<2.0",                                 # Airflow doesn't yet support SQLAlchemy 2.x
+    "psycopg2-binary>=2.9,<3.0",                            # psycopg3 is only supported by SQLAlchemy 2.0+
 
-    "apache-airflow-providers-airbyte==5.2.5",          # Airbyte operator
-    "apache-airflow-providers-sftp>=5.4.2,<5.5",        # SFTP hook (required by SFTPToGCSOperator)
-    "apache-airflow-providers-google>=19.0,<19.1",      # SFTPToGCSOperator + GCS hooks
-    "apache-airflow-providers-docker>=4.4.5,<4.5",      # Docker operator for running containers
-    "acryl-datahub-airflow-plugin[airflow2]==1.4.0.2",  # DataHub extension for OpenLineage (match Server version)
+    "apache-airflow-providers-airbyte>=5.5,<5.6",           # Airbyte operator
+    "apache-airflow-providers-docker>=4.5,<4.6",            # Docker operator for running containers (dbt-core)
+    "apache-airflow-providers-google>=22.2,<22.3",          # SFTPToGCSOperator + GCS hooks
+    "apache-airflow-providers-sftp>=5.8,<5.9",              # SFTP hook (required by SFTPToGCSOperator)
+    "acryl-datahub-airflow-plugin[airflow2]>=1.5,<=1.6.0",  # DataHub plugin for Airflow (<=1.6.0 is last one to support Airflow 2.x)
 ]
 
 [project.optional-dependencies]
 celery = [
-    "apache-airflow-providers-celery>=3.10.0,<4.0",    # required for CeleryExecutor
-    "apache-airflow-providers-redis>=3.8.0,<4.0",      # required for CeleryExecutor
+    "apache-airflow-providers-celery>=3.22,<3.23",          # required for CeleryExecutor
+    "apache-airflow-providers-redis>=4.5,<4.6",             # required for CeleryExecutor
 ]
 
 [dependency-groups]
 dev = [
     "ruff>=0.15",
-    "jupyterlab>=4.5.3",
+    "jupyterlab>=4.6",
 ]
 
 [tool.setuptools.packages.find]

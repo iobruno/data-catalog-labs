@@ -7,10 +7,11 @@ from airflow.providers.airbyte.operators.airbyte import AirbyteTriggerSyncOperat
 from airflow.providers.docker.operators.docker import DockerOperator
 from docker.types import Mount
 
-hackernews_rss_front_conn_id = Variable.get("hackernews_rss_front_conn_id")
-hackernews_rss_comments_conn_id = Variable.get("hackernews_rss_comments_conn_id")
-hackernews_rss_newest_conn_id = Variable.get("hackernews_rss_newest_conn_id")
 airbyte_conn = BaseHook.get_connection("airbyte_default")
+
+hackernews_rss_front_conn_id = Variable.get("hackernews_rss_front_conn_id", None)
+hackernews_rss_comments_conn_id = Variable.get("hackernews_rss_comments_conn_id", None)
+hackernews_rss_newest_conn_id = Variable.get("hackernews_rss_newest_conn_id", None)
 
 with DAG(
     dag_id="hackernews_rss_bigquery",
