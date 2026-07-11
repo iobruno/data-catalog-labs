@@ -36,12 +36,3 @@ models:
       - name: published_at
         data_type: STRING
         description: 'Article publication timestamp'
-
-      - name: source_feed
-        data_type: STRING
-        description: 'HackerNews feed the article was sourced from (hot or newest)'
-        tests:
-          - not_null
-          - accepted_values:
-              arguments:
-                values: ['hot', 'newest']
