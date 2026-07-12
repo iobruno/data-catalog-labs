@@ -1,18 +1,17 @@
 # DataHub Connector - Airbyte
 
-[![Kafka](https://img.shields.io/badge/Confluent_Platform-8.1-141414?style=flat&logo=apachekafka&logoColor=white&labelColor=141414)](https://docs.confluent.io/platform/current/)
-[![Airbyte](https://img.shields.io/badge/Airbyte-2.0-007CEE?style=flat&logo=airbyte&logoColor=5F5DFF&labelColor=14193A)](https://docs.airbyte.com/platform/2.0/using-airbyte/getting-started/oss-quickstart)
+[![Airbyte](https://img.shields.io/badge/Airbyte-2.1-007CEE?style=flat&logo=airbyte&logoColor=5F5DFF&labelColor=14193A)](https://docs.airbyte.com/platform/2.0/using-airbyte/getting-started/oss-quickstart)
 [![Docker](https://img.shields.io/badge/Docker-329DEE?style=flat&logo=docker&logoColor=white&labelColor=329DEE)](https://docs.docker.com/get-docker/)
+
 
 ## Getting Started
 
-To work on this, you'll need DataHub, Airflow, and Airbyte infrastructure up and running:
+To work on this, you'll need DataHub, Airflow, and Airbyte infrastructure up-and-running:
+* [DataHub: Getting Started](../../datahub/README.md#getting-started) 
+* [Airflow: Getting Started](../../airflow/README.md#getting-started)
+* [Airbyte: Getting Started](../../airbyte/README.md#getting-started)
 
-**1.** Spin up DataHub if it's not already running - follow [DataHub - Getting Started](../../datahub/README.md#getting-started) 
-
-**2.** Spin up Airflow if it's not already running - follow [Airflow - Getting Started](../../airflow/README.md#getting-started)
-
-**3.** Spin up Airbyte if it's not already running - follow [Airbyte - Getting Started](../../airbyte/README.md#getting-started)
+⚠️ As it stands `airbyte-api>=1.0,<1.1` breaks on: [get_destination](https://github.com/airbytehq/airbyte-api-python-sdk/blob/main/docs/sdks/destinations/README.md#get_destination) and  [list_destinations](https://github.com/airbytehq/airbyte-api-python-sdk/blob/main/docs/sdks/destinations/README.md#list_destinations). So, keep `"airbyte-api>=0.53.0,<1.0"` on [pyproject.toml](./pyproject.toml) dependencies for now.
 
 
 ## DataHub Custom Recipe Ingestion
@@ -56,12 +55,12 @@ export DATAHUB_REST_SERVER=http://host.docker.internal:9090
 
 **3.** Trigger the ingestion pipeline with [recipe.yml](./recipe.yml):
 ```shell
+AIRFLOW_DAG_NAME=<airflow-dag-name> \
+AIRFLOW_TASK_NAME=<airflow-dag-task-name>> \
+AIRBYTE_CONNECTION_ID=<airbyte-connection-id> \
 AIRBYTE_SERVER_URL=http://localhost:8000/api/public/v1/ \
 AIRBYTE_CLIENT_ID=<client-id> \
 AIRBYTE_CLIENT_SECRET=<client-secret> \
-AIRBYTE_CONNECTION_ID=<airbyte-connection-id> \
-AIRFLOW_DAG_NAME=<airflow-dag-name> \
-AIRFLOW_TASK_NAME=<airflow-dag-task-name>> \
 datahub ingest -c recipe.yml
 ```
 
@@ -75,13 +74,13 @@ docker build -t datahub-airbyte-ingest:latest . --no-cache
 
 **2.** Start a container with it:
 ```shell
-docker run --rm \
-    -e AIRBYTE_CONNECTION_ID=<airbyte-connection-id> \
-    -e AIRFLOW_TASK_NAME=<airflow-dag-task-name> \
+docker run --rm \                                         
     -e AIRFLOW_DAG_NAME=<airflow-dag-name> \
+    -e AIRFLOW_TASK_NAME=<airflow-dag-task-name> \
+    -e AIRBYTE_CONNECTION_ID=<airbyte-connection-id> \
+    -e AIRBYTE_CLIENT_ID=<airbyte-client-id> \
+    -e AIRBYTE_CLIENT_SECRET=<airbyte-client-secret> \
     -e AIRBYTE_SERVER_URL=http://host.docker.internal:8000/api/public/v1/ \
-    -e AIRBYTE_CLIENT_ID=<client-id> \
-    -e AIRBYTE_CLIENT_SECRET=<client-secret> \
     -e DATAHUB_KAFKA_BOOSTRAP_SERVERS=host.docker.internal:9093 \
     -e DATAHUB_SCHEMA_REGISTRY_URL=http://host.docker.internal:8081 \
     --name datahub-ingest-airbyte \
