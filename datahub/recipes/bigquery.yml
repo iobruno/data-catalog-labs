@@ -23,6 +23,7 @@ source:
     include_tables: true
     include_views: true
     include_table_lineage: true
+    incremental_lineage: true     # Incremental to dbt lineage
 
     profiling:
       enabled: false  # disabled by default as it can be resource intensive
