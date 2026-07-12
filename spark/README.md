@@ -1,10 +1,10 @@
 # Spark → DataHub OpenLineage
 
-![Python](https://img.shields.io/badge/Python-3.13_|_3.12-4B8BBE.svg?style=flat&logo=python&logoColor=FFD43B&labelColor=306998)
+![Python](https://img.shields.io/badge/Python-3.11-4B8BBE.svg?style=flat&logo=python&logoColor=FFD43B&labelColor=306998)
 [![PySpark](https://img.shields.io/badge/PySpark-3.5-262A38?style=flat-square&logo=apachespark&logoColor=E36B22&labelColor=262A38)](https://spark.apache.org/docs/3.5.7/api/python/user_guide/index.html)
 [![Scala](https://img.shields.io/badge/Scala-2.12-262A38?style=flat-square&logo=scala&logoColor=E03E3C&labelColor=262A38)](https://sdkman.io/)
 [![JDK](https://img.shields.io/badge/JDK-17-35667C?style=flat&logo=openjdk&logoColor=FFFFFF&labelColor=1D213B)](https://sdkman.io/)
-[![Acryl-Spark](https://img.shields.io/badge/acryl--spark--lineage-262A38?style=flat-square&logo=lineageos&logoColor=73A4BC&labelColor=262A38)](https://docs.datahub.com/docs/metadata-integration/java/acryl-spark-lineage)
+[![Acryl-Spark](https://img.shields.io/badge/acryl--spark--lineage-1.6.0-262A38?style=flat-square&logo=lineageos&logoColor=73A4BC&labelColor=262A38)](https://docs.datahub.com/docs/metadata-integration/java/acryl-spark-lineage)
 [![uv](https://img.shields.io/badge/astral/uv-261230?style=flat&logo=uv&logoColor=DE5FE9&labelColor=261230)](https://docs.astral.sh/uv/getting-started/installation/)
 [![Docker](https://img.shields.io/badge/Docker-329DEE?style=flat&logo=docker&logoColor=white&labelColor=329DEE)](https://docs.docker.com/get-docker/)
 
@@ -37,14 +37,14 @@ docker compose up -d
 ```
 
 
-## Spark-submit Application
+## Spark-submit App
 
 ```shell
 spark-submit \
     --master spark://localhost:7077 \
     --conf spark.eventLog.enabled=true \
     --conf spark.eventLog.dir=file://$(pwd)/logs/ \
-    --packages io.acryl:acryl-spark-lineage_2.12:0.2.18 \
+    --packages io.acryl:acryl-spark-lineage_2.12:1.6.0.10 \
     --jars https://storage.googleapis.com/spark-lib/bigquery/spark-3.5-bigquery-0.44.0.jar \
     spark_openlineage.py
 ```
