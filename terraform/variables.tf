@@ -13,12 +13,18 @@ variable "airbyte_workspace_id" {
     description = "Default Airbyte Workspace ID"
 }
 
-variable "airbyte_hackernews_rss_sources" {
+variable "airbyte_gcp_credentials_path" {
+  type        = string
+  sensitive   = true
+  description = "Path to GCP service account JSON key file (use $GOOGLE_APPLICATION_CREDENTIALS)"
+}
+
+variable "airbyte_source_hackernews_rss" {
   type        = map(string)
   description = "Map of RSS source names to URLs"
 }
 
-variable "airbyte_hackernews_bq_destination" {
+variable "airbyte_destination_hackernews_bigquery" {
   type  = string
   description = "Destination Name"
 }
@@ -39,8 +45,3 @@ variable "gcp_data_region" {
   default     = "us-central1"
 }
 
-variable "gcp_credentials_path" {
-  type        = string
-  sensitive   = true
-  description = "Path to GCP service account JSON key file (use $GOOGLE_APPLICATION_CREDENTIALS)"
-}

@@ -1,23 +1,23 @@
 resource "airbyte_source_rss" "hackernews_rss" {
-    for_each = var.airbyte_hackernews_rss_sources
+    for_each = var.airbyte_source_hackernews_rss
 
+    name          = each.key
+    workspace_id  = var.airbyte_workspace_id
     configuration = {
         url = each.value
     }
-    name         = each.key
-    workspace_id = var.airbyte_workspace_id
 }
 
 resource "airbyte_destination_bigquery" "hackernews_bq" {
-  name          = var.airbyte_hackernews_bq_destination
+  name          = var.airbyte_destination_hackernews_bigquery
   workspace_id  = var.airbyte_workspace_id
 
   configuration = {
+    project_id                      = var.gcp_project_id
     dataset_id                      = var.bq_hackernews_raw_dataset
     dataset_location                = var.gcp_data_region
-    project_id                      = var.gcp_project_id
     
-    credentials_json                = file(var.gcp_credentials_path)
+    credentials_json                = file(var.airbyte_gcp_credentials_path)
     loading_method                  = {
       batched_standard_inserts      = {}
     }
@@ -25,7 +25,7 @@ resource "airbyte_destination_bigquery" "hackernews_bq" {
 }
 
 resource "airbyte_connection" "hackernews_rss_to_bigquery" {
-  for_each = var.airbyte_hackernews_rss_sources
+  for_each = var.airbyte_source_hackernews_rss
 
   source_id      = airbyte_source_rss.hackernews_rss[each.key].source_id
   destination_id = airbyte_destination_bigquery.hackernews_bq.destination_id

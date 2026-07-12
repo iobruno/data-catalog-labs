@@ -34,27 +34,27 @@ abctl local install
 abctl local credentials
 ```
 
-5. Build the datahub-dbt-bigquery-ingest Docker Image
-```shell
-docker build -t datahub-dbt-bigquery-ingest:latest dbt/ --no-cache
-```
-
-6. Build the databahub-airbyte-ingest Docker Image
-```shell
-docker build -t datahub-airbyte-ingest:latest datahub-connectors/airbyte/ --no-cache
-```
-
-7. Build the datahub-bigquery-ingest Docker Image
+5. Build the datahub-bigquery-ingest Docker Image
 ```shell
 docker build -t datahub-bigquery-ingest:latest -f datahub/Dockerfile.bigquery datahub/ --no-cache
 ```
 
-7. Terraform 
+6. Build the datahub-dbt-bigquery-ingest Docker Image
+```shell
+docker build -t datahub-dbt-bigquery-ingest:latest dbt/ --no-cache
+```
+
+7. Build the databahub-airbyte-ingest Docker Image
+```shell
+docker build -t datahub-airbyte-ingest:latest datahub-connectors/airbyte/ --no-cache
+```
+
+8. Terraform
 ```txt
 Follow the instructions on [terraform](./terraform/) for guidelines on how to run/apply
 ```
 
-8. Update `/etc/hosts` to resolve 'host.docker.internal' to loopback address
+9. Update `/etc/hosts` to resolve 'host.docker.internal' to loopback address
 ```shell
 sudo sh -c 'echo "127.0.0.1       host.docker.internal" >> /etc/hosts'
 ```
