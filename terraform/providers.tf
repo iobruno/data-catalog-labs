@@ -2,11 +2,11 @@ terraform {
     required_providers {
         airbyte = {
             source = "airbytehq/airbyte"
-            version = "0.6.5"
+            version = "1.0.2"
         }
         google = {
             source  = "hashicorp/google"
-            version = "7.17.0"
+            version = "7.39.0"
         }
     }
 
@@ -21,6 +21,7 @@ provider "airbyte" {
     client_secret = var.airbyte_client_secret
 
     server_url = "http://localhost:8000/api/public/v1/"
+    token_url = "http://localhost:8000/api/public/v1/applications/token"
 }
 
 provider "google" {
